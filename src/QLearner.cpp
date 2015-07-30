@@ -8,13 +8,25 @@ QLearner::QLearner(int input_size, int action_count, int memory_length):
 	mLearningNetwork( nullptr )
 {
 	mMemory.set_capacity( memory_length );
+	
+	mInitMemoryPop = std::min( memory_length, 100*mMiniBatchSize );
 
-	// initialize network
-	mQNetwork = fann_create_standard(3, mInputSize, (mInputSize+mNumActions+40)/2/*, (mInputSize+2*mNumActions+40)/4*/, mNumActions);
-	//fann_randomize_weights(mQNetwork, 0.0, 0.0001);
-	//mNetwork = fann_create_from_file("neuralbot.net");
-	//fann_init_weights_minmax(mQNetwork, 0.0, 1.0);
-	//fann_set_activation_function_hidden(mQNetwork, FANN_LINEAR_PIECE);
+	// initialize network default config
+	setupQNetwork( std::vector<int>{ (mInputSize+mNumActions+40)/2});
+	
+}
+
+void QLearner::setupQNetwork(const std::vector<int>& layers)
+{
+	std::vector<unsigned> sizes(layers.size()+2);
+	sizes[0] = mInputSize;
+	std::copy(layers.begin(), layers.end(), sizes.begin()+1);
+	sizes[layers.size()+1] = mNumActions;
+	
+	if(mQNetwork)
+		fann_destroy(mQNetwork);
+	mQNetwork = fann_create_standard_array( sizes.size(), sizes.data() ); 
+	
 	fann_set_activation_function_output(mQNetwork, FANN_LINEAR);
 	fann_set_train_error_function(mQNetwork, FANN_ERRORFUNC_LINEAR);
 	fann_set_activation_function_hidden(mQNetwork, FANN_SIGMOID_SYMMETRIC_STEPWISE);
@@ -103,14 +115,14 @@ int QLearner::learn_step( const std::vector<float>& situation, float reward, boo
 	mAverageQuality = mFloatingMean * mAverageQuality + (1-mFloatingMean) * mCurrentQuality;
 
 	// update the strategy: adapt epsilon
-	if( mCurrentEpsilon > mFinalEpsilon )
+	if( mCurrentEpsilon > mFinalEpsilon && mMemory.size() >  mInitMemoryPop)
 		mCurrentEpsilon -= (1.0 - mFinalEpsilon) / mEpsilonSteps;
 
 	// with certain probability choose a random action
 	auto random_action = std::discrete_distribution<int>({1 - mCurrentEpsilon, mCurrentEpsilon});
 	if( random_action(mRandom))
 	{
-		auto ind_dst = std::uniform_int_distribution<int>(0, mNumActions-1);
+		auto ind_dst = std::uniform_int_distribution<int>(0, mNumActions-1); // this is inclusive, so we need -1
 		action = ind_dst(mRandom);
 	}
 

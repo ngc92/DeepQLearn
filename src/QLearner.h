@@ -29,6 +29,8 @@ public:
 	void start_learning();
 	void load(std::string name);
 	void save(std::string file) const;
+	
+	void setupQNetwork(const std::vector<int>& layers);
 
 	// this puts a new learning step into the Q learner. It returns the
 	// action ID that the Q-learner wants to test next.
@@ -44,7 +46,9 @@ public:
 	void setDiscountFactor ( double dis ) { mDiscountFactor = dis; };
 	void setLearningRate   ( double lrt ) { mLearningRate   = lrt; };
 	void setEpsilonSteps   ( int    eps ) { mEpsilonSteps   = eps; };
+	void setFinalEpsilon   ( float  eps ) { mFinalEpsilon   = eps; };
 	void setNetUpdateRate  ( int    nur ) { mNetUpdateFrq   = nur; };
+	void setInitMemoryPop  ( int    imp ) { mInitMemoryPop  = imp; };
 
 
 	// success tracking
@@ -69,7 +73,7 @@ private:
 	qlearn_callback mCallback;
 
 	// neural net
-	fann* mQNetwork;
+	fann* mQNetwork = nullptr;
 	std::mutex mLockNetwork;
 
 	// strategy annealing
@@ -77,7 +81,7 @@ private:
 	double mFinalEpsilon   = 0.1;
 	int    mEpsilonSteps   = 1e6;
 	int    mNetUpdateFrq   = 10000;
-	int    mInitMemoryPop  = 50000;
+	int    mInitMemoryPop;
 	int    mStepCounter    = 0;
 
 	// success tracking
