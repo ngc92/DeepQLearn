@@ -2,12 +2,31 @@
 #include "fann.h"
 #include <iostream>
 
-QLearner::QLearner(int input_size, int action_count, int memory_length):
-	mInputSize(input_size),
+// helpers
+std::vector<float> concat(const boost::circular_buffer<std::vector<float>>& b)
+{
+	std::vector<float> result;
+	std::size_t len = 0;
+	for(const auto& v : b)
+	{
+		len += v.size();
+	}
+	result.reserve(len);
+	for(const auto& v : b)
+	{
+		std::copy(v.begin(), v.end(), std::back_inserter(result));
+	}
+	return result;
+}
+
+QLearner::QLearner(int input_size, int action_count, int memory_length, int history):
+	mInputSize(input_size * history),
 	mNumActions(action_count),
-	mLearningNetwork( nullptr )
+	mLearningNetwork( nullptr ), 
+	mHistoryLength( history )
 {
 	mMemory.set_capacity( memory_length );
+	mCurrentHistory.set_capacity( mHistoryLength );
 	
 	mInitMemoryPop = std::min( memory_length, 100*mMiniBatchSize );
 
@@ -92,8 +111,10 @@ int QLearner::learn_step( const std::vector<float>& situation, float reward, boo
 		std::this_thread::sleep_for( std::chrono::milliseconds(10));
 	}
 
-
-	mMemoryCache.future   =  situation;
+	mCurrentHistory.push_back( situation );
+	auto hist = concat(mCurrentHistory);
+	
+	mMemoryCache.future   =  hist;
 	mMemoryCache.terminal =  terminal;
 	mMemoryCache.reward   =  reward;
 	mCurrenEpisodeReward  += reward;
@@ -107,8 +128,9 @@ int QLearner::learn_step( const std::vector<float>& situation, float reward, boo
 		mCurrenEpisodeReward = 0;
 	}
 
-	int action = getAction( mQNetwork, situation, mCurrentQuality );
-	mMemoryCache.situation = situation;
+	int action = getAction( mQNetwork, hist, mCurrentQuality );
+	if(mCurrentHistory.size() == mHistoryLength)
+		mMemoryCache.situation = hist;
 
 //	std::cout << mCurrentQuality << "\n";
 

@@ -21,7 +21,7 @@ extern "C"
 class QLearner
 {
 public:
-	QLearner( int input_size, int action_count, int memory_length );
+	QLearner( int input_size, int action_count, int memory_length, int history = 1 );
 	~QLearner();
 	
 	void setCallback( qlearn_callback cb ) { mCallback = cb; };
@@ -66,6 +66,7 @@ private:
 	int mNumActions;
 
 	int    mMiniBatchSize  = 32;
+	int    mHistoryLength  = 1;
 	float  mStepsPerBatch  = 4;
 	double mDiscountFactor = 0.99;
 	double mLearningRate   = 0.01;
@@ -108,6 +109,7 @@ private:
 		bool terminal;
 	};
 
+	boost::circular_buffer<std::vector<float>> mCurrentHistory;
 	boost::circular_buffer<MemoryEntry> mMemory;
 	std::mutex mLockMemory;
 	MemoryEntry mMemoryCache;
