@@ -36,8 +36,6 @@ private:
 	
 	// the layers
 	std::vector<P_Layer> mLayers;
-	// have a separate reference to the input layer
-	std::shared_ptr<InputLayer<T>> mInputLayer;
 	
 };
 
@@ -57,7 +55,7 @@ Network<T>::Network(std::vector<int> layers)
 	#endif
 	
 	// generate input layer
-	mInputLayer = std::make_shared<InputLayer<T>>( mNumInputs );
+	mLayers.push_back(std::make_shared<InputLayer<T>>( mNumInputs ));
 	
 	// generate hidden layers
 	for(unsigned i = 1; i < layers.size(); ++i)
@@ -70,6 +68,11 @@ Network<T>::Network(std::vector<int> layers)
 	}
 	
 	// connect the layers
+	for(unsigned i = 1; i < layers.size(); ++i)
+	{
+		mLayers.at(i)->setPreviousLayer( mLayers.at(i-1) );
+		mLayers.at(i-1)->setNextLayer( mLayers.at(i) );
+	}
 	
 	// initialize the weights
 }

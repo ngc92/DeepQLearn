@@ -14,6 +14,15 @@ public:
 	virtual ~ILayer() {};
 	virtual void forward() = 0;
 	
+	void setOutput(const std::vector<T>& container)
+	{
+		assert( container.size() == getNumNeurons() );
+		setOutput( container.data() );
+	}
+	
+	virtual void setOutput(const T* out) = 0; // forces the layers output to be \p out. A safer version (overload) of this function is provided 
+											  // that checks length compatibility
+	
 	// build up connections
 	virtual void setPreviousLayer( const WP_ILayer& prev ) = 0;
 	virtual void setNextLayer( const WP_ILayer& next ) = 0;
@@ -30,8 +39,8 @@ public:
 	virtual const T* getNeuronIn() const = 0; 
 	virtual const T* getWeights()  const = 0;
 	virtual const T* getBias()     const = 0;
-};
 
+};
 
 // single layer of an ANN
 template<class T, typename A>
@@ -41,6 +50,8 @@ public:
 	using typename ILayer<T>::WP_ILayer;
 	
 	Layer( unsigned inputs, unsigned outputs );
+	
+	void setOutput(const T* out) override;
 	
 	// propagate signal through the layer
 	void forward() override;
@@ -91,6 +102,12 @@ Layer<T, A>::Layer( unsigned inputs, unsigned outputs ) :
 	mBiasWeights( outputs )
 {
 	
+}
+
+template<class T, typename A>
+void Layer<T, A>::setOutput(const T* out) 
+{
+	std::copy(out, out + mNumNeurons, mNeuronOut.begin());
 }
 
 template<class T, typename A>
@@ -154,6 +171,8 @@ public:
 	
 	InputLayer( unsigned neurons );
 	
+	void setOutput(const T* out) override;
+	
 	// propagate signal through the layer
 	void forward() override;
 	
@@ -205,6 +224,12 @@ void InputLayer<T>::setNextLayer( const WP_ILayer& next )
 	assert( next.lock()->getNumInputs() == getNumNeurons() );
 	
 	mNextLayer = next;
+}
+
+template<class T>
+void InputLayer<T>::setOutput(const T* out) 
+{
+	std::copy(out, out + mNumNeurons, mNeuronOut.begin());
 }
 
 
