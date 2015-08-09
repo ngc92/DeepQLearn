@@ -24,6 +24,8 @@ class FCLayer : public ILayer<T>
 {
 public:
 	using typename ILayer<T>::WP_ILayer;
+	using typename ILayer<T>::range_t;
+	using typename ILayer<T>::const_range_t;
 	
 	FCLayer( unsigned inputs, unsigned outputs );
 	
@@ -45,11 +47,11 @@ public:
 	const WP_ILayer& getNextLayer()     const override { return mNextLayer; };
 	
 	// get access to layer data
-	const T* getOutput() 	 const override { return mNeuronOut.data(); };
-	const T* getNeuronIn()   const override { return mNeuronSum.data(); };
-	const T* getWeights()    const override { return mWeights.data(); };
-	const T* getBias()       const override { return mBiasWeights.data(); };
-	const T* getError()      const override { return mError.data(); };
+	const_range_t getOutput()   const override { return const_range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
+	const_range_t getNeuronIn() const override { return const_range_t{mNeuronSum.data(),   mNeuronSum.data()   + mNeuronSum.size()};   };
+	const_range_t getWeights()  const override { return const_range_t{mWeights.data(),     mWeights.data()     + mWeights.size()};     };
+	const_range_t getBias()     const override { return const_range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()}; };
+	const_range_t getError()    const override { return const_range_t{mError.data(),       mError.data()       + mError.size()};       };
 	
 private:
 	
@@ -127,7 +129,7 @@ void FCLayer<T, A>::setNextLayer( const WP_ILayer& next )
 template<class T, template<typename> class A>
 void FCLayer<T, A>::forward()
 {
-	const T* input = mPreviousLayer.lock()->getOutput();
+	const_range_t input = mPreviousLayer.lock()->getOutput();
 	
 	// calculate new neuron sum
 	for(unsigned i = 0; i < mNumNeurons; ++i)
