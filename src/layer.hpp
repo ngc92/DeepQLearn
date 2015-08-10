@@ -21,19 +21,13 @@ public:
 	
 	virtual ~ILayer() {};
 	virtual void forward() = 0;
+	virtual void backward() = 0;
 	
 	template<class Cont>
 	void setOutput(const Cont& container)
 	{
 		assert( container.size() == getNumNeurons() );
 		boost::copy( container, getOutputMutable().begin() );
-	}
-	
-	template<class Cont>
-	void setError( const Cont& container )
-	{
-		assert( container.size() == getNumNeurons() );
-		boost::copy( container, getErrorMutable().begin() );
 	}
 	
 	template<class Cont>
@@ -61,18 +55,16 @@ public:
 	
 	// get access to layer data
 	const_range_t getOutput()   const { return const_cast<this_t*>(this)->getOutputMutable(); };
-	const_range_t getNeuronIn() const { return const_cast<this_t*>(this)->getNeuronInMutable(); };
 	const_range_t getWeights()  const { return const_cast<this_t*>(this)->getWeightsMutable(); };
 	const_range_t getBias()     const { return const_cast<this_t*>(this)->getBiasMutable(); };
-	const_range_t getError()    const { return const_cast<this_t*>(this)->getErrorMutable(); };
+	const_range_t getGradient()    const { return const_cast<this_t*>(this)->getGradientMutable(); };
 	
-private:
+protected:
 	// mutable access to layer data
 	virtual range_t getOutputMutable() = 0;
-	virtual range_t getNeuronInMutable() = 0;
 	virtual range_t getWeightsMutable() = 0;
 	virtual range_t getBiasMutable() = 0;
-	virtual range_t getErrorMutable() = 0;
+	virtual range_t getGradientMutable() = 0;
 };
 
 #endif // LAYER_HPP_INCLUDED

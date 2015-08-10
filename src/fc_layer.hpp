@@ -4,22 +4,8 @@
 // Fully Connected Layer 
 #include "layer.hpp"
 
-namespace activation
-{
-	template<class T>
-	class tanh
-	{
-	public:
-		T operator()( const T& t) 
-		{
-			return std::tanh(t);
-		}
-	};
-}
-
-
 // single layer of an ANN
-template<class T, template<typename> class A>
+template<class T>
 class FCLayer : public ILayer<T>
 {
 public:
@@ -31,6 +17,7 @@ public:
 	
 	// propagate signal through the layer
 	void forward() override;
+	void backward() override;
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override;
@@ -47,47 +34,42 @@ private:
 	
 	// get access to layer data
 	range_t getOutputMutable()   override { return range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
-	range_t getNeuronInMutable() override { return range_t{mNeuronSum.data(),   mNeuronSum.data()   + mNeuronSum.size()};   };
 	range_t getWeightsMutable()  override { return range_t{mWeights.data(),     mWeights.data()     + mWeights.size()};     };
-	range_t getBiasMutable()     override { return range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()}; };
-	range_t getErrorMutable()    override { return range_t{mError.data(),       mError.data()       + mError.size()};       };
+	range_t getBiasMutable()     override { return range_t{}; 																};
+	range_t getGradientMutable()    override { return range_t{mGradient.data(),       mGradient.data()       + mGradient.size()};       };
 	
 	unsigned mNumNeurons;
 	unsigned mNumInputs;
 	
 	// neurons
-	std::vector<T> mNeuronSum;
 	std::vector<T> mNeuronOut;
 	
 	// weights
 	std::vector<T> mWeights;
-	std::vector<T> mBiasWeights;
 	
 	// error
 	/// \todo allocate only when needed
-	std::vector<T> mError;
+	std::vector<T> mGradient;
 	
 	// connected layers
 	WP_ILayer mPreviousLayer;
 	WP_ILayer mNextLayer;
 };
 
-template<class T, template<typename> class A>
-FCLayer<T, A>::FCLayer( unsigned inputs, unsigned outputs ) : 
+template<class T>
+FCLayer<T>::FCLayer( unsigned inputs, unsigned outputs ) : 
 	mNumNeurons( outputs ), 
 	mNumInputs( inputs ),
 	// allocate memory and zero initialize
-	mNeuronSum( outputs ),
 	mNeuronOut( outputs ),
 	mWeights( inputs * outputs ),
-	mBiasWeights( outputs ),
-	mError( outputs )
+	mGradient( inputs )
 {
 	
 }
 
-template<class T, template<typename> class A>
-void FCLayer<T, A>::setPreviousLayer( const WP_ILayer& prev )
+template<class T>
+void FCLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 {
 	// for now, do not allow to change the prev layer later on
 	assert( mPreviousLayer.expired() );
@@ -98,8 +80,8 @@ void FCLayer<T, A>::setPreviousLayer( const WP_ILayer& prev )
 	mPreviousLayer = prev;
 }
 
-template<class T, template<typename> class A>
-void FCLayer<T, A>::setNextLayer( const WP_ILayer& next )
+template<class T>
+void FCLayer<T>::setNextLayer( const WP_ILayer& next )
 {
 	// for now, do not allow to change the prev layer later on
 	assert( mNextLayer.expired() );
@@ -111,8 +93,8 @@ void FCLayer<T, A>::setNextLayer( const WP_ILayer& next )
 }
 
 
-template<class T, template<typename> class A>
-void FCLayer<T, A>::forward()
+template<class T>
+void FCLayer<T>::forward()
 {
 	const_range_t input = mPreviousLayer.lock()->getOutput();
 	
@@ -125,19 +107,23 @@ void FCLayer<T, A>::forward()
 			tempsum += input[j] * mWeights[i * mNumInputs + j];
 		}
 		
-		// BIAS neuron
-		tempsum += mBiasWeights[i];
-		
-		mNeuronSum[i] = tempsum;
 		mNeuronOut[i] = tempsum;
 	}
-	
-	// apply activation function.
-	// TODO is this better here or in the other loop?
-	std::transform(mNeuronOut.begin(), mNeuronOut.end(), mNeuronOut.begin(), A<T>());
 }
 
 
+template<class T>
+void FCLayer<T>::backward()
+{
+	// write the error into the previous layer's error var
+	auto nextgrad = mPreviousLayer.lock()->getGradient();
+	
+	for(unsigned i = 0; i < mNumNeurons; ++i)
+	{
+		for(unsigned j = 0; j < mNumInputs; ++j)
+			mGradient[j] += nextgrad[i] * mWeights[i * mNumInputs + j];
+	}
+}
 
 
 #endif // FC_LAYER_HPP_INCLUDED
