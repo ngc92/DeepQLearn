@@ -24,8 +24,9 @@ public:
 	void setNextLayer( const WP_ILayer& next ) override;
 	
 	// infos 
-	unsigned getNumNeurons() const override { return mNumNeurons; };
-	unsigned getNumInputs()  const override { return mNumInputs; };
+	unsigned getNumNeurons() const override   { return mNumNeurons; };
+	unsigned getNumInputs()  const override   { return mNumInputs;  };
+	const char* getLayerType() const override { return "fc";        };
 	
 	const WP_ILayer& getPreviousLayer() const override { return mPreviousLayer; };
 	const WP_ILayer& getNextLayer()     const override { return mNextLayer; };

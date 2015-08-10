@@ -51,6 +51,7 @@ public:
 	// infos 
 	unsigned getNumNeurons() const override { return mNumNeurons; };
 	unsigned getNumInputs()  const override { return mNumNeurons; };
+	const char* getLayerType() const override { return "nl";      };
 	
 	const WP_ILayer& getPreviousLayer() const override { return mPreviousLayer; };
 	const WP_ILayer& getNextLayer()     const override { return mNextLayer; };

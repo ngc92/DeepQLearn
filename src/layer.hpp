@@ -47,8 +47,9 @@ public:
 	virtual void setNextLayer( const WP_ILayer& next ) = 0;
 	
 	// infos
-	virtual unsigned getNumNeurons() const = 0;
-	virtual unsigned getNumInputs()  const = 0;
+	virtual unsigned getNumNeurons()   const = 0;
+	virtual unsigned getNumInputs()    const = 0;
+	virtual const char* getLayerType() const = 0;
 	
 	virtual const WP_ILayer& getPreviousLayer() const = 0;
 	virtual const WP_ILayer& getNextLayer()     const = 0;
