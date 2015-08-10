@@ -7,12 +7,14 @@
 #include <functional>
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <boost/range/algorithm/generate.hpp>
 
 // base class of all layers
 template<class T>
 class ILayer
 {
 public:
+	typedef ILayer<T> this_t;
 	typedef std::weak_ptr<const ILayer>  WP_ILayer;
 	typedef boost::iterator_range<T*> range_t;
 	typedef boost::iterator_range<const T*> const_range_t;
@@ -20,10 +22,18 @@ public:
 	virtual ~ILayer() {};
 	virtual void forward() = 0;
 	
-	void setOutput(const std::vector<T>& container)
+	template<class Cont>
+	void setOutput(const Cont& container)
 	{
 		assert( container.size() == getNumNeurons() );
-		setOutput( container.data() );
+		boost::copy( container, getOutputMutable().begin() );
+	}
+	
+	template<class Cont>
+	void setError( const Cont& container )
+	{
+		assert( container.size() == getNumNeurons() );
+		boost::copy( container, getErrorMutable().begin() );
 	}
 	
 	template<class Cont>
@@ -32,11 +42,12 @@ public:
 		boost::copy( getOutput(), cont.begin() );
 	}
 	
-	virtual void setOutput(const T* out) = 0; // forces the layers output to be \p out. A safer version (overload) of this function is provided 
-											  // that checks length compatibility
-	
-	virtual void randomizeWeights( const std::function<T()>& distribution ) = 0;
-	
+	template<class Func>
+	void randomizeWeights( const Func& distribution )
+	{
+		boost::generate( getWeightsMutable(), distribution );		
+	}
+
 	// build up connections
 	virtual void setPreviousLayer( const WP_ILayer& prev ) = 0;
 	virtual void setNextLayer( const WP_ILayer& next ) = 0;
@@ -49,11 +60,19 @@ public:
 	virtual const WP_ILayer& getNextLayer()     const = 0;
 	
 	// get access to layer data
-	virtual const_range_t getOutput()   const = 0;
-	virtual const_range_t getNeuronIn() const = 0; 
-	virtual const_range_t getWeights()  const = 0;
-	virtual const_range_t getBias()     const = 0;
-	virtual const_range_t getError()    const = 0;
+	const_range_t getOutput()   const { return const_cast<this_t*>(this)->getOutputMutable(); };
+	const_range_t getNeuronIn() const { return const_cast<this_t*>(this)->getNeuronInMutable(); };
+	const_range_t getWeights()  const { return const_cast<this_t*>(this)->getWeightsMutable(); };
+	const_range_t getBias()     const { return const_cast<this_t*>(this)->getBiasMutable(); };
+	const_range_t getError()    const { return const_cast<this_t*>(this)->getErrorMutable(); };
+	
+private:
+	// mutable access to layer data
+	virtual range_t getOutputMutable() = 0;
+	virtual range_t getNeuronInMutable() = 0;
+	virtual range_t getWeightsMutable() = 0;
+	virtual range_t getBiasMutable() = 0;
+	virtual range_t getErrorMutable() = 0;
 };
 
 #endif // LAYER_HPP_INCLUDED

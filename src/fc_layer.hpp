@@ -29,9 +29,6 @@ public:
 	
 	FCLayer( unsigned inputs, unsigned outputs );
 	
-	void setOutput(const T* out) override;
-	void randomizeWeights( const std::function<T()>& distribution ) override;
-	
 	// propagate signal through the layer
 	void forward() override;
 	
@@ -46,14 +43,14 @@ public:
 	const WP_ILayer& getPreviousLayer() const override { return mPreviousLayer; };
 	const WP_ILayer& getNextLayer()     const override { return mNextLayer; };
 	
-	// get access to layer data
-	const_range_t getOutput()   const override { return const_range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
-	const_range_t getNeuronIn() const override { return const_range_t{mNeuronSum.data(),   mNeuronSum.data()   + mNeuronSum.size()};   };
-	const_range_t getWeights()  const override { return const_range_t{mWeights.data(),     mWeights.data()     + mWeights.size()};     };
-	const_range_t getBias()     const override { return const_range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()}; };
-	const_range_t getError()    const override { return const_range_t{mError.data(),       mError.data()       + mError.size()};       };
-	
 private:
+	
+	// get access to layer data
+	range_t getOutputMutable()   override { return range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
+	range_t getNeuronInMutable() override { return range_t{mNeuronSum.data(),   mNeuronSum.data()   + mNeuronSum.size()};   };
+	range_t getWeightsMutable()  override { return range_t{mWeights.data(),     mWeights.data()     + mWeights.size()};     };
+	range_t getBiasMutable()     override { return range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()}; };
+	range_t getErrorMutable()    override { return range_t{mError.data(),       mError.data()       + mError.size()};       };
 	
 	unsigned mNumNeurons;
 	unsigned mNumInputs;
@@ -87,18 +84,6 @@ FCLayer<T, A>::FCLayer( unsigned inputs, unsigned outputs ) :
 	mError( outputs )
 {
 	
-}
-
-template<class T, template<typename> class A>
-void FCLayer<T, A>::setOutput(const T* out) 
-{
-	std::copy(out, out + mNumNeurons, mNeuronOut.begin());
-}
-
-template<class T, template<typename> class A>
-void FCLayer<T, A>::randomizeWeights( const std::function<T()>& distribution )
-{
-	std::generate( mWeights.begin(), mWeights.end(), distribution );
 }
 
 template<class T, template<typename> class A>
