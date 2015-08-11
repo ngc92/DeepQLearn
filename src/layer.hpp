@@ -8,6 +8,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/generate.hpp>
+#include <boost/range/algorithm/fill.hpp>
 
 // base class of all layers
 template<class T>
@@ -22,6 +23,7 @@ public:
 	virtual ~ILayer() {};
 	virtual void forward() = 0;
 	virtual void backward() = 0;
+	virtual void updateWeights( const T& eta ) = 0;
 	
 	template<class Cont>
 	void setOutput(const Cont& container)
@@ -39,7 +41,7 @@ public:
 	
 	void resetGradient()
 	{
-		boost::generate(getGradientMutable(), T(0));
+		boost::fill(getGradientMutable(), T(0));
 	}
 	
 	template<class Cont>

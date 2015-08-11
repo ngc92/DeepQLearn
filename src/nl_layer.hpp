@@ -43,6 +43,7 @@ public:
 	// propagate signal through the layer
 	void forward() override;
 	void backward() override;
+	void updateWeights( const T& eta ) override;
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override;
@@ -142,6 +143,19 @@ void NLLayer<T, A>::backward()
 		mGradient[i] = A<T>::deriv( input[i] + mBiasWeights[i] ) * prevgrad[i];
 	}
 }
+
+template<class T, template<typename> class A>
+void NLLayer<T, A>::updateWeights( const T& eta )
+{
+	auto nextgrad = mNextLayer.lock()->getGradient();
+	const_range_t input = mPreviousLayer.lock()->getOutput();
+	
+	for(unsigned i = 0; i < mNumNeurons; ++i)
+	{
+		mBiasWeights[i] += eta*nextgrad[i];
+	}
+}
+
 
 
 #endif // NL_LAYER_HPP_INCLUDED

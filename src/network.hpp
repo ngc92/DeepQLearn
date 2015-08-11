@@ -113,6 +113,9 @@ void Network<T>::forward( const std::vector<T>& input )
 template<class T>
 void Network<T>::backward( const std::vector<T>& gradient )
 {
+	for(auto& l : mLayers )
+		l->resetGradient();
+	
 	mLayers.back()->setGradient(gradient);
 	
 	for(auto it = mLayers.rbegin(); it != mLayers.rend(); ++it)

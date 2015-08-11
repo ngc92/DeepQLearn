@@ -18,6 +18,7 @@ public:
 	// propagate signal through the layer
 	void forward() override;
 	void backward() override;
+	void updateWeights( const T& eta ) override;
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override;
@@ -122,6 +123,20 @@ void FCLayer<T>::backward()
 	{
 		for(unsigned j = 0; j < mNumInputs; ++j)
 			mGradient[j] += nextgrad[i] * mWeights[i * mNumInputs + j];
+	}
+}
+
+
+template<class T>
+void FCLayer<T>::updateWeights( const T& eta )
+{
+	auto nextgrad = mNextLayer.lock()->getGradient();
+	const_range_t input = mPreviousLayer.lock()->getOutput();
+	
+	for(unsigned i = 0; i < mNumNeurons; ++i)
+	{
+		for(unsigned j = 0; j < mNumInputs; ++j)
+			mWeights[i * mNumInputs + j] += eta * input[j] * nextgrad[i];
 	}
 }
 

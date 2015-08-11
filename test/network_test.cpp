@@ -71,21 +71,30 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(backward, T, float_types)
 	std::vector<T> bias= {0.0, 0.5};
 	net.getLayer(2)->setWeights( bias.begin() );
 	
-	std::vector<T> input = {1.0, -1.0};
-	net.forward(input);
-	
-	// desired output
-	std::vector<T> out = {std::tanh(T(1.0)), std::tanh(T(0.0))};
-	auto rout = net.getOutput();
-	T sqerrsum = 0;
-	for( unsigned i = 0; i < out.size(); ++i)
+	for(int i = 0; i < 10; ++i)
 	{
-		out[i] -= rout[i];
-		sqerrsum += out[i] * out[i];
-	}
-	net.backward(out);
+		std::vector<T> input = {1.0, -1.0};
+		net.forward(input);
+		
+		// desired output
+		std::vector<T> out = {std::tanh(T(1.0)), std::tanh(T(0.0))};
+		auto rout = net.getOutput();
+		std::cout << net.getLayer(2)->getWeights()[1] << "\n";
+		T sqerrsum = 0;
+		for( unsigned i = 0; i < out.size(); ++i)
+		{
+			out[i] -= rout[i];
+			sqerrsum += out[i] * out[i];
+		}
+		net.backward(out);
+		for(int j = 0; j < 4; ++j)
+		{
+			net.getLayer(j)->updateWeights(0.1);
+		}
+		
+		std::cout << rout[0] << " " << rout[1] << " " << sqerrsum << "\n";
 	
-	std::cout << sqerrsum << "\n";
+	}
 	
 	
 	//BOOST_CHECK( net.getOutput() == output );
