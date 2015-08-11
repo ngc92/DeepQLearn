@@ -43,7 +43,7 @@ public:
 	// propagate signal through the layer
 	void forward() override;
 	void backward() override;
-	void updateWeights( const T& eta ) override;
+	void calcLearningSlopes( T*& target ) override;
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override;
@@ -145,17 +145,12 @@ void NLLayer<T, A>::backward()
 }
 
 template<class T, template<typename> class A>
-void NLLayer<T, A>::updateWeights( const T& eta )
+void NLLayer<T, A>::calcLearningSlopes( T*& target )
 {
-	auto nextgrad = mNextLayer.lock()->getGradient();
-	const_range_t input = mPreviousLayer.lock()->getOutput();
-	
+	auto nextgrad = mNextLayer.lock()->getGradient();	
 	for(unsigned i = 0; i < mNumNeurons; ++i)
-	{
-		mBiasWeights[i] += eta*nextgrad[i];
-	}
+		*(target++) += mGradient[i];
 }
-
 
 
 #endif // NL_LAYER_HPP_INCLUDED

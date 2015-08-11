@@ -11,6 +11,8 @@
 #include <boost/range/algorithm/fill.hpp>
 
 // base class of all layers
+
+/// \todo change gradient to be saved alongside output instead of input.
 template<class T>
 class ILayer
 {
@@ -23,8 +25,18 @@ public:
 	virtual ~ILayer() {};
 	virtual void forward() = 0;
 	virtual void backward() = 0;
-	virtual void updateWeights( const T& eta ) = 0;
 	
+	/// calculates the learning slopes. they will be added to 
+	/// \p target, and the pointer will be incremented.
+	virtual void calcLearningSlopes( T*& target ) = 0;
+	
+	void updateWeights( T*& source )
+	{
+		auto weights = getWeightsMutable();
+		for( auto& w : weights )
+			w += *(source++);
+	}
+
 	template<class Cont>
 	void setOutput(const Cont& container)
 	{

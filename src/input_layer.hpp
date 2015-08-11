@@ -18,7 +18,7 @@ public:
 	// propagate signal through the layer
 	void forward() override;
 	void backward() override;
-	void updateWeights( const T& eta ) override {};
+	void calcLearningSlopes( T*& target ) override {};
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override { assert(0); };

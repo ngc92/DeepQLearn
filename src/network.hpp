@@ -34,7 +34,6 @@ public:
 	
 	void forward( const std::vector<T>& input );
 	void backward( const std::vector<T>& gradient );
-	void setDesiredOutput( std::vector<T> out );
 	
 	boost::iterator_range<const T*> getOutput() const { return mLayers.back()->getOutput(); };
 	
@@ -44,6 +43,11 @@ public:
 	unsigned getNumLayers() const { return mLayers.size(); };
 	
 	const P_Layer& getLayer( unsigned id ) { return mLayers.at(id); };
+	
+	// functions to come:
+	/*	save / load
+		getter for all weights, gradients etc
+	*/
 	
 private:
 	unsigned mNumInputs;
@@ -123,26 +127,5 @@ void Network<T>::backward( const std::vector<T>& gradient )
 		(*it)->backward();
 	}
 }
-
-
-template<class T>
-void Network<T>::setDesiredOutput( std::vector<T> out )
-{
-	auto rout = mLayers.back().getOutput();
-	assert( rout.size() == out.size() );
-	
-	T sqerrsum = 0;
-	
-	for( unsigned i = 0; i < out.size(); ++i)
-	{
-		out[i] -= rout[i];
-		sqerrsum += out[i] * out[i];
-		
-		
-	}
-	
-	mMSE = sqerrsum / out.size();
-}
-
 
 #endif // NETWORK_HPP_INCLUDED

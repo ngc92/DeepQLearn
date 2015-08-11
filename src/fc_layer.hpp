@@ -18,7 +18,7 @@ public:
 	// propagate signal through the layer
 	void forward() override;
 	void backward() override;
-	void updateWeights( const T& eta ) override;
+	void calcLearningSlopes( T*& target ) override;
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override;
@@ -128,7 +128,7 @@ void FCLayer<T>::backward()
 
 
 template<class T>
-void FCLayer<T>::updateWeights( const T& eta )
+void FCLayer<T>::calcLearningSlopes( T*& target )
 {
 	auto nextgrad = mNextLayer.lock()->getGradient();
 	const_range_t input = mPreviousLayer.lock()->getOutput();
@@ -136,8 +136,10 @@ void FCLayer<T>::updateWeights( const T& eta )
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 	{
 		for(unsigned j = 0; j < mNumInputs; ++j)
-			mWeights[i * mNumInputs + j] += eta * input[j] * nextgrad[i];
+			target[i * mNumInputs + j] += input[j] * nextgrad[i];
 	}
+	
+	target += mNumInputs * mNumNeurons;
 }
 
 

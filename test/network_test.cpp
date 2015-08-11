@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(backward, T, float_types)
 	net.getLayer(1)->setWeights( weights.begin() );	
 	std::vector<T> bias= {0.0, 0.5};
 	net.getLayer(2)->setWeights( bias.begin() );
-	
+	/*
 	for(int i = 0; i < 10; ++i)
 	{
 		std::vector<T> input = {1.0, -1.0};
@@ -89,13 +89,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(backward, T, float_types)
 		net.backward(out);
 		for(int j = 0; j < 4; ++j)
 		{
-			net.getLayer(j)->updateWeights(0.1);
+//			net.getLayer(j)->updateWeights(0.5);
 		}
 		
 		std::cout << rout[0] << " " << rout[1] << " " << sqerrsum << "\n";
 	
 	}
-	
+	*/
 	
 	//BOOST_CHECK( net.getOutput() == output );
 }
