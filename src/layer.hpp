@@ -75,7 +75,7 @@ public:
 	// get access to layer data
 	const_range_t getOutput()   const { return const_cast<this_t*>(this)->getOutputMutable(); };
 	const_range_t getWeights()  const { return const_cast<this_t*>(this)->getWeightsMutable(); };
-	const_range_t getGradient()    const { return const_cast<this_t*>(this)->getGradientMutable(); };
+	const_range_t getGradient() const { return const_cast<this_t*>(this)->getGradientMutable(); };
 	
 protected:
 	// mutable access to layer data

@@ -11,12 +11,12 @@ namespace activation
 	class tanh
 	{
 	public:
-		T operator()( const T& t) 
+		static T apply(const T& t) 
 		{
 			return std::tanh(t);
 		}
 		
-		T deriv( const T& t )
+		static T deriv( const T& t )
 		{
 			T ch = std::cosh(t);
 			return 1.0 / (ch*ch);
@@ -123,10 +123,9 @@ void NLLayer<T, A>::forward()
 	const_range_t input = mPreviousLayer.lock()->getOutput();
 	
 	// calculate new neuron sum
-	auto trafo = A<T>();
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 	{
-		mNeuronOut[i] = trafo(input[i] + mBiasWeights[i]);
+		mNeuronOut[i] = A<T>::apply(input[i] + mBiasWeights[i]);
 	}
 }
 
@@ -140,7 +139,7 @@ void NLLayer<T, A>::backward()
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 	{
 		// apply activation function
-		mGradient[i] = A<T>().deriv( input[i] ) * prevgrad[i];
+		mGradient[i] = A<T>::deriv( input[i] + mBiasWeights[i] ) * prevgrad[i];
 	}
 }
 
