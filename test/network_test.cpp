@@ -45,11 +45,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward, T, float_types)
 	
 	std::vector<T> weights = {1.0, 0.0, 1.0, 1.0};
 	net.getLayer(1)->setWeights( weights.begin() );	
+	std::vector<T> bias= {0.0, 0.5};
+	net.getLayer(2)->setWeights( bias.begin() );
 	
 	std::vector<T> input = {1.0, -1.0};
 	net.forward(input);
 	
-	std::vector<T> output = {std::tanh(T(1.0)), std::tanh(T(0))};
+	std::vector<T> output = {std::tanh(T(1.0)), std::tanh(T(0.5))};
 	BOOST_CHECK( net.getOutput() == output );
 }
 

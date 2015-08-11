@@ -36,7 +36,6 @@ private:
 	// get access to layer data
 	range_t getOutputMutable()   override { return range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
 	range_t getWeightsMutable()  override { return range_t{mWeights.data(),     mWeights.data()     + mWeights.size()};     };
-	range_t getBiasMutable()     override { return range_t{}; 																};
 	range_t getGradientMutable()    override { return range_t{mGradient.data(),       mGradient.data()       + mGradient.size()};       };
 	
 	unsigned mNumNeurons;

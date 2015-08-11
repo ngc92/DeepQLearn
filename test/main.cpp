@@ -31,7 +31,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fc_layer_ctor, T, float_types)
 
 	BOOST_CHECK( !layer.getOutput().empty() );
 	BOOST_CHECK( !layer.getWeights().empty() );
-	BOOST_CHECK( layer.getBias().empty() );
 	BOOST_CHECK( !layer.getGradient().empty() ); /// \todo change, when we make error allocation optional
 };
 
@@ -52,7 +51,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(input_layer_ctor, T, float_types)
 	
 	BOOST_CHECK( !layer.getOutput().empty() );
 	BOOST_CHECK( layer.getWeights().empty() );
-	BOOST_CHECK( layer.getBias().empty() );
 	BOOST_CHECK( layer.getGradient().empty() );
 };
 
@@ -72,8 +70,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(nl_layer_ctor, T, float_types)
 	BOOST_CHECK( layer.getNextLayer().expired() );
 	
 	BOOST_CHECK( !layer.getOutput().empty() );
-	BOOST_CHECK( layer.getWeights().empty() ); /// \todo allow weights to configure steepness
-	BOOST_CHECK( !layer.getBias().empty() );
+	BOOST_CHECK( !layer.getWeights().empty() ); 
 	BOOST_CHECK( !layer.getGradient().empty() );
 };
 

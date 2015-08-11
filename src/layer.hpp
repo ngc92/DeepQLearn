@@ -70,14 +70,12 @@ public:
 	// get access to layer data
 	const_range_t getOutput()   const { return const_cast<this_t*>(this)->getOutputMutable(); };
 	const_range_t getWeights()  const { return const_cast<this_t*>(this)->getWeightsMutable(); };
-	const_range_t getBias()     const { return const_cast<this_t*>(this)->getBiasMutable(); };
 	const_range_t getGradient()    const { return const_cast<this_t*>(this)->getGradientMutable(); };
 	
 protected:
 	// mutable access to layer data
 	virtual range_t getOutputMutable() = 0;
 	virtual range_t getWeightsMutable() = 0;
-	virtual range_t getBiasMutable() = 0;
 	virtual range_t getGradientMutable() = 0;
 };
 

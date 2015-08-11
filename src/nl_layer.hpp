@@ -60,8 +60,7 @@ private:
 	
 	// get access to layer data
 	range_t getOutputMutable()   override { return range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
-	range_t getWeightsMutable()  override { return range_t{};                  												};
-	range_t getBiasMutable()     override { return range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()}; };
+	range_t getWeightsMutable()  override {return range_t{mBiasWeights.data(), mBiasWeights.data() + mBiasWeights.size()};  };
 	range_t getGradientMutable() override { return range_t{mGradient.data(),    mGradient.data()    + mGradient.size()};    };
 	
 	unsigned mNumNeurons;
@@ -127,7 +126,7 @@ void NLLayer<T, A>::forward()
 	auto trafo = A<T>();
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 	{
-		mNeuronOut[i] = trafo(input[i]);
+		mNeuronOut[i] = trafo(input[i] + mBiasWeights[i]);
 	}
 }
 
