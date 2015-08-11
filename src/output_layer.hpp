@@ -68,7 +68,7 @@ void OutputLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 	assert( mPreviousLayer.expired() );
 	
 	// check layer compatibility
-	assert( prev.lock()->getNumInputs() == getNumNeurons() );
+	assert( prev.lock()->getNumNeurons() == getNumNeurons() );
 	
 	mPreviousLayer = prev;
 }
@@ -76,6 +76,9 @@ void OutputLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 template<class T>
 void OutputLayer<T>::forward()
 {
+	// propagate output unchanged!
+	/// \todo this construction might be bad for performance!
+	boost::copy( mPreviousLayer.lock()->getOutput(), mNeuronOut.begin() );
 }
 
 template<class T>

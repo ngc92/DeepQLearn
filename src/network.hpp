@@ -36,12 +36,14 @@ public:
 	void backward( const std::vector<T>& gradient );
 	void setDesiredOutput( std::vector<T> out );
 	
-	const std::vector<T>& getOutput() const { return mLastOutput; };
+	boost::iterator_range<const T*> getOutput() const { return mLayers.back()->getOutput(); };
 	
 	// info functions
 	unsigned getNumInputs() const { return mNumInputs; };
 	unsigned getNumOutputs() const { return mNumOutputs; };
 	unsigned getNumLayers() const { return mLayers.size(); };
+	
+	const P_Layer& getLayer( unsigned id ) { return mLayers.at(id); };
 	
 private:
 	unsigned mNumInputs;
@@ -55,8 +57,6 @@ private:
 	
 	// the layers
 	std::vector<P_Layer> mLayers;
-	
-	std::vector<T> mLastOutput;
 	
 };
 
@@ -107,11 +107,6 @@ void Network<T>::forward( const std::vector<T>& input )
 	mLayers.front()->setOutput(input);
 	for(auto& layer : mLayers )
 		layer->forward();
-	
-	if( mSaveOutput )
-	{
-		mLayers.back()->getOutput(mLastOutput);
-	}
 }
 
 

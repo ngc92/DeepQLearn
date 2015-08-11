@@ -48,6 +48,12 @@ public:
 	{
 		boost::generate( getWeightsMutable(), distribution );		
 	}
+	
+	template<class IT>
+	void setWeights( IT iterator )
+	{
+		std::copy(iterator, iterator + getWeightsMutable().size(), getWeightsMutable().begin());
+	}
 
 	// build up connections
 	virtual void setPreviousLayer( const WP_ILayer& prev ) = 0;
