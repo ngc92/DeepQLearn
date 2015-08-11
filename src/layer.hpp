@@ -31,6 +31,13 @@ public:
 	}
 	
 	template<class Cont>
+	void setGradient(const Cont& container)
+	{
+		assert( container.size() == getNumInputs() );
+		boost::copy( container, getGradientMutable().begin() );
+	}
+	
+	template<class Cont>
 	void getOutput( Cont& cont )
 	{
 		boost::copy( getOutput(), cont.begin() );

@@ -9,12 +9,20 @@
 #include <random>
 
 #include "layer.hpp"
-#include "fc_layer.hpp"
-#include "input_layer.hpp"
-#include "nl_layer.hpp"
-#include "output_layer.hpp"
+#include "layer_factory.hpp"
 
 // fann function that might be usefully copied?
+
+struct LayerInfo
+{
+	LayerInfo() = default;
+	LayerInfo(const std::string& t, int n ) : type(t), neurons(n)
+	{
+	}
+	
+	std::string type;
+	int neurons;
+};
 
 template<class T>
 class Network
@@ -22,13 +30,18 @@ class Network
 	typedef std::shared_ptr<ILayer<T>> P_Layer;
 	
 public:
-	Network( std::vector<int> layers );
+	Network( std::vector<LayerInfo> layers );
 	
-	void run(  );
 	void forward( const std::vector<T>& input );
+	void backward( const std::vector<T>& gradient );
 	void setDesiredOutput( std::vector<T> out );
 	
 	const std::vector<T>& getOutput() const { return mLastOutput; };
+	
+	// info functions
+	unsigned getNumInputs() const { return mNumInputs; };
+	unsigned getNumOutputs() const { return mNumOutputs; };
+	unsigned getNumLayers() const { return mLayers.size(); };
 	
 private:
 	unsigned mNumInputs;
@@ -50,27 +63,28 @@ private:
 
 // most simple network setup
 template<class T>
-Network<T>::Network(std::vector<int> layers)
+Network<T>::Network(std::vector<LayerInfo> layers)
 {
+	// if last layer is not an output layer, add 
+	if( layers.back().type != "output" )
+	{
+		layers.emplace_back("output", layers.at(layers.size()-1).neurons);
+	}
 	assert( layers.size() >= 2 );
+	// check that first is input (we made sure last was output)
+	assert( layers.front().type == "input" );
 	
-	mNumInputs = layers.front();
-	mNumOutputs = layers.back();
-	
-	// generate input layer
-	mLayers.push_back(std::make_shared<InputLayer<T>>( mNumInputs ));
+	mLayers.push_back(createLayer<T>(0, layers.front().neurons, layers.front().type));
 	
 	// generate hidden layers
 	for(unsigned i = 1; i < layers.size(); ++i)
 	{
-		auto layer = std::make_shared<FCLayer<T>>(layers.at(i-1), layers.at(i));
+		auto layer = createLayer<T>(layers.at(i-1).neurons, layers.at(i).neurons, layers.at(i).type);
 		mLayers.push_back(layer);
-		
-		auto nlayer = std::make_shared<NLLayer<T, activation::tanh>>(layers.at(i));
-		mLayers.push_back(nlayer);
 	}
-
-	mLayers.push_back(std::make_shared<OutputLayer<T>>( mNumOutputs ));
+	
+	mNumInputs = mLayers.front()->getNumNeurons();
+	mNumOutputs = mLayers.back()->getNumNeurons();
 	
 	// connect the layers
 	for(unsigned i = 1; i < layers.size(); ++i)
@@ -100,6 +114,19 @@ void Network<T>::forward( const std::vector<T>& input )
 	}
 }
 
+
+template<class T>
+void Network<T>::backward( const std::vector<T>& gradient )
+{
+	mLayers.back()->setGradient(gradient);
+	
+	for(auto it = mLayers.rbegin(); it != mLayers.rend(); ++it)
+	{
+		(*it)->backward();
+	}
+}
+
+
 template<class T>
 void Network<T>::setDesiredOutput( std::vector<T> out )
 {
@@ -112,21 +139,8 @@ void Network<T>::setDesiredOutput( std::vector<T> out )
 	{
 		out[i] -= rout[i];
 		sqerrsum += out[i] * out[i];
-		/*
-		if(ann->train_error_function)
-		{
-			if(neuron_diff < -.9999999)
-				neuron_diff = -17.0;
-			else if(neuron_diff > .9999999)
-				neuron_diff = 17.0;
-			else
-				neuron_diff = (fann_type) log((1.0 + neuron_diff) / (1.0 - neuron_diff));
-		}*/
 		
-		/**error_it = fann_activation_derived(last_layer_begin->activation_function,
-											last_layer_begin->activation_steepness, neuron_value,
-											last_layer_begin->sum) * neuron_diff;
-		*/
+		
 	}
 	
 	mMSE = sqerrsum / out.size();
