@@ -55,5 +55,41 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward, T, float_types)
 	BOOST_CHECK( net.getOutput() == output );
 }
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(backward, T, float_types)
+{
+	// THIS IS CURRENTLY USED TO TEST LEARNING
+	const int NUM_IN = 2;
+	const int NUM_OUT = 2;
+	
+	LayerInfo first = {"input", NUM_IN};
+	LayerInfo second = {"fc", NUM_OUT};
+	LayerInfo third =  {"nl tanh", NUM_OUT};
+	Network<T> net = {std::vector<LayerInfo>{first, second, third}};
+	
+	std::vector<T> weights = {1.0, 0.0, 1.0, 1.0};
+	net.getLayer(1)->setWeights( weights.begin() );	
+	std::vector<T> bias= {0.0, 0.5};
+	net.getLayer(2)->setWeights( bias.begin() );
+	
+	std::vector<T> input = {1.0, -1.0};
+	net.forward(input);
+	
+	// desired output
+	std::vector<T> out = {std::tanh(T(1.0)), std::tanh(T(0.0))};
+	auto rout = net.getOutput();
+	T sqerrsum = 0;
+	for( unsigned i = 0; i < out.size(); ++i)
+	{
+		out[i] -= rout[i];
+		sqerrsum += out[i] * out[i];
+	}
+	net.backward(out);
+	
+	std::cout << sqerrsum << "\n";
+	
+	
+	//BOOST_CHECK( net.getOutput() == output );
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 

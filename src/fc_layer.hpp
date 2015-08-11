@@ -116,7 +116,7 @@ template<class T>
 void FCLayer<T>::backward()
 {
 	// write the error into the previous layer's error var
-	auto nextgrad = mPreviousLayer.lock()->getGradient();
+	auto nextgrad = mNextLayer.lock()->getGradient();
 	
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 	{

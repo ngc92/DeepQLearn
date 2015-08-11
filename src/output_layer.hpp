@@ -35,7 +35,7 @@ private:
 	// get access to layer data
 	range_t getOutputMutable()   override { return range_t{mNeuronOut.data(),   mNeuronOut.data()   + mNeuronOut.size()};   };
 	range_t getWeightsMutable()  override { return range_t{}; };
-	range_t getGradientMutable()    override { return range_t{}; };
+	range_t getGradientMutable()    override { return range_t{mGradient.data(), mGradient.data() + mGradient.size()}; };
 	
 	
 	static const WP_ILayer EmptyNext;
@@ -83,6 +83,7 @@ void OutputLayer<T>::forward()
 template<class T>
 void OutputLayer<T>::backward()
 {
+	// output gets the gradient / error set externally. no work here
 }
 
 template<typename T>

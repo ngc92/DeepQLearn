@@ -37,6 +37,11 @@ public:
 		boost::copy( container, getGradientMutable().begin() );
 	}
 	
+	void resetGradient()
+	{
+		boost::generate(getGradientMutable(), T(0));
+	}
+	
 	template<class Cont>
 	void getOutput( Cont& cont )
 	{
