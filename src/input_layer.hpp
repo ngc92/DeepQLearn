@@ -19,6 +19,7 @@ public:
 	void forward() override;
 	void backward() override;
 	void calcLearningSlopes( T*& target ) override {};
+	std::shared_ptr<ILayer<T>> clone() const override { return std::make_shared<InputLayer<T>>( *this );};
 	
 	// build up connections
 	void setPreviousLayer( const WP_ILayer& prev ) override { assert(0); };

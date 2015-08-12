@@ -31,6 +31,10 @@ class Network
 	
 public:
 	Network( std::vector<LayerInfo> layers );
+	// made uncopyable (shallow copy). For a deep copy, use clone
+	Network& operator=(const Network<T>& o) = delete;
+	
+	Network<T> clone() const;
 	
 	void forward( const std::vector<T>& input );
 	void backward( const std::vector<T>& gradient );
@@ -50,6 +54,9 @@ public:
 	*/
 	
 private:
+	// this c'tor exists, because it can be used as basis for implementing the deep copy
+	Network( const Network<T>& other ) = default;
+	
 	unsigned mNumInputs;
 	unsigned mNumOutputs;
 	
@@ -126,6 +133,17 @@ void Network<T>::backward( const std::vector<T>& gradient )
 	{
 		(*it)->backward();
 	}
+}
+
+template<class T>
+Network<T> Network<T>::clone() const
+{
+	Network<T> newnet {*this};
+	for(auto& l : newnet.mLayers)
+	{
+		l = l->clone();
+	}
+	return newnet;
 }
 
 #endif // NETWORK_HPP_INCLUDED
