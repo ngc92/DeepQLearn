@@ -26,6 +26,7 @@ public:
 	virtual void forward() = 0;
 	virtual void backward() = 0;
 	
+	// clones this layer.
 	virtual std::shared_ptr<ILayer<T>> clone() const = 0;
 	
 	/// calculates the learning slopes. they will be added to 

@@ -65,9 +65,6 @@ OutputLayer<T>::OutputLayer( unsigned neurons ) :
 template<class T>
 void OutputLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mPreviousLayer.expired() );
-	
 	// check layer compatibility
 	assert( prev.lock()->getNumNeurons() == getNumNeurons() );
 	

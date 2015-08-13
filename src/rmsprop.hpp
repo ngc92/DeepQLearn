@@ -1,5 +1,7 @@
 #pragma once
 
+#include "batch_teacher.hpp"
+
 
 // simple implementation
 template<class T>

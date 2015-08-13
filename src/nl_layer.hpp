@@ -97,9 +97,6 @@ NLLayer<T, A>::NLLayer( unsigned neurons ) :
 template<class T, template<typename> class A>
 void NLLayer<T, A>::setPreviousLayer( const WP_ILayer& prev )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mPreviousLayer.expired() );
-	
 	// check layer compatibility
 	assert( prev.lock()->getNumNeurons() == getNumInputs() );
 	
@@ -109,9 +106,6 @@ void NLLayer<T, A>::setPreviousLayer( const WP_ILayer& prev )
 template<class T, template<typename> class A>
 void NLLayer<T, A>::setNextLayer( const WP_ILayer& next )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mNextLayer.expired() );
-	
 	// check layer compatibility
 	assert( next.lock()->getNumInputs() == getNumNeurons() );
 	
@@ -148,7 +142,6 @@ void NLLayer<T, A>::backward()
 template<class T, template<typename> class A>
 void NLLayer<T, A>::calcLearningSlopes( T*& target )
 {
-	auto nextgrad = mNextLayer.lock()->getGradient();	
 	for(unsigned i = 0; i < mNumNeurons; ++i)
 		*(target++) += mGradient[i];
 }

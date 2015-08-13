@@ -16,12 +16,17 @@ class BatchTeacher
 public:
 	BatchTeacher( std::shared_ptr<Network<T>> network, std::shared_ptr<WeightUpdater<T>> updater );
 	
+	/// performs a supervised learning sample
+	void sample_supervised( const std::vector<T>& input, std::vector<T> desired_output );
+	
 	/// propagates the error signal backwards and records the training
 	/// slopes. 
 	void sample( const std::vector<T>& error );
 	
 	/// finishes a mini batch and changes weights.
-	void finishMiniBatch();
+	T finishMiniBatch();
+	
+	T getMSE() const;
 	
 	/// read access to weight slopes
 	typedef boost::iterator_range<const T*> const_range_t;
@@ -33,6 +38,9 @@ private:
 	
 	std::vector<T> mWeightSlopes;
 	unsigned mSampleCount;
+	
+	// total squared error
+	T mTotalSquaredError = 0;
 };
 
 
@@ -46,7 +54,7 @@ BatchTeacher<T>::BatchTeacher( std::shared_ptr<Network<T>> network, std::shared_
 	std::size_t mem = 0;
 	for(unsigned i = 0; i < mNetwork->getNumLayers(); ++i)
 	{
-		mem += mNetwork->getLayer(i)->getGradient().size();
+		mem += mNetwork->getLayer(i)->getWeights().size();
 	}
 	mWeightSlopes.resize(mem, T(0));
 }
@@ -55,6 +63,10 @@ BatchTeacher<T>::BatchTeacher( std::shared_ptr<Network<T>> network, std::shared_
 template<class T>
 void BatchTeacher<T>::sample( const std::vector<T>& error )
 {
+	assert( error.size() == mNetwork->getNumOutputs() );
+	for(auto& v : error)
+		mTotalSquaredError += v*v;
+	
 	mNetwork->backward( error );
 	T* pointer = mWeightSlopes.data();
 	for(unsigned i = 0; i < mNetwork->getNumLayers(); ++i)
@@ -66,7 +78,22 @@ void BatchTeacher<T>::sample( const std::vector<T>& error )
 }
 
 template<class T>
-void BatchTeacher<T>::finishMiniBatch( )
+void BatchTeacher<T>::sample_supervised( const std::vector<T>& input, std::vector<T> desired_output )
+{
+	mNetwork->forward( input );
+	auto out = mNetwork->getOutput();
+	
+	assert( desired_output.size() == out.size() );
+	
+	for(unsigned i = 0; i < desired_output.size(); ++i)
+		desired_output[i] -= out[i];
+	
+	sample( desired_output );
+}
+
+
+template<class T>
+T BatchTeacher<T>::finishMiniBatch( )
 {
 	// calculate mean
 	T factor = T(1)/T(mSampleCount);
@@ -84,7 +111,18 @@ void BatchTeacher<T>::finishMiniBatch( )
 	
 	// reset
 	boost::fill(mWeightSlopes, T(0));
+	
+	auto error = getMSE();
+	
 	mSampleCount = 0;
+	mTotalSquaredError = 0;
+	return error;
+}
+
+template<class T>
+T BatchTeacher<T>::getMSE() const
+{
+	return mTotalSquaredError / mSampleCount / mNetwork->getNumOutputs();
 }
 
 

@@ -31,6 +31,7 @@ class Network
 	
 public:
 	Network( std::vector<LayerInfo> layers );
+	Network( Network&& ) = default;
 	// made uncopyable (shallow copy). For a deep copy, use clone
 	Network& operator=(const Network<T>& o) = delete;
 	
@@ -62,9 +63,6 @@ private:
 	
 	// configurations
 	bool mSaveOutput = true;
-	
-	// error tracking
-	T mMSE = T(0);
 	
 	// the layers
 	std::vector<P_Layer> mLayers;
@@ -143,6 +141,14 @@ Network<T> Network<T>::clone() const
 	{
 		l = l->clone();
 	}
+	
+	// update prev/next pointers
+	for(unsigned i = 1; i < mLayers.size(); ++i)
+	{
+		newnet.mLayers.at(i)->setPreviousLayer( newnet.mLayers.at(i-1) );
+		newnet.mLayers.at(i-1)->setNextLayer( newnet.mLayers.at(i) );
+	}
+	
 	return newnet;
 }
 

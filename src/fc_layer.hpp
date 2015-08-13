@@ -74,9 +74,6 @@ FCLayer<T>::FCLayer( unsigned inputs, unsigned outputs ) :
 template<class T>
 void FCLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mPreviousLayer.expired() );
-	
 	// check layer compatibility
 	assert( prev.lock()->getNumNeurons() == getNumInputs() );
 	
@@ -86,9 +83,6 @@ void FCLayer<T>::setPreviousLayer( const WP_ILayer& prev )
 template<class T>
 void FCLayer<T>::setNextLayer( const WP_ILayer& next )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mNextLayer.expired() );
-	
 	// check layer compatibility
 	assert( next.lock()->getNumInputs() == getNumNeurons() );
 	

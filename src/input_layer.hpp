@@ -64,9 +64,6 @@ InputLayer<T>::InputLayer( unsigned neurons ) :
 template<class T>
 void InputLayer<T>::setNextLayer( const WP_ILayer& next )
 {
-	// for now, do not allow to change the prev layer later on
-	assert( mNextLayer.expired() );
-	
 	// check layer compatibility
 	assert( next.lock()->getNumInputs() == getNumNeurons() );
 	
