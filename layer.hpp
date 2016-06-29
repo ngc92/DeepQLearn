@@ -12,26 +12,28 @@ enum class LayerType
 
 class ILayer
 {
-	// clones this layer.
-	//virtual std::shared_ptr<ILayer> clone() const = 0;
 public:
+	/// \todo fix this function!
 	virtual LayerType getType() const = 0;
 
+	/// call notation to pass a computation through this layer.
 	ComputationNode operator()(ComputationNode input ) const
 	{
 		return forward( std::move(input) );
 	};
 
+	/// propagate a computation node through this layer.
 	ComputationNode forward( ComputationNode input ) const;
 
-	// propagates input forward and calculates output
-	virtual Vector process(const Vector& input) const = 0;
-
-	// propagates error backward, and uses solver to track gradient
+	/// propagates error backward, and uses solver to track gradient
 	virtual Vector backward(const Vector& error, const ComputationNode& compute, Solver& solver) const = 0;
 
-	// update the parameters
+	/// update the parameters according to the solver.
 	virtual void update(Solver& solver) = 0;
 	
+	/// creates a copy of this layer.
 	virtual std::unique_ptr<ILayer> clone() const = 0;
+private:
+	/// propagates input forward and calculates output.
+	virtual Vector process(const Vector& input) const = 0;
 };

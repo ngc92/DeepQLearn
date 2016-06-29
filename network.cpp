@@ -1,9 +1,8 @@
 #include "network.hpp"
-#include "layer.hpp"
 
 Network& Network::add_layer_imp( layer_t layer )
 {
-	mLayers.push_back( layer );
+	mLayers.push_back( std::move(layer) );
 	return *this;
 }
 

@@ -6,6 +6,8 @@
 #include <functional>
 #include <string>
 
+#include "q_learner_config.h"
+
 class Network;
 class Solver;
 class QLearner;
@@ -18,10 +20,10 @@ struct LearningEntry
 	Vector q_values;
 };
 
-class QLearner
+class QLearner : private QLearnerConfig
 {
 public:
-	QLearner( int input_size, int action_count, int memory_length, int history = 1 );
+	QLearner( QLearnerConfig config );
 	~QLearner();
 
 	void setCallback( qlearn_callback cb ) { mCallback = cb; };
@@ -37,13 +39,7 @@ public:
 	Vector assess( const Vector& situation ) const;
 
 	// parameter setup
-	void setMiniBatchSize  ( int    mbs ) { mMiniBatchSize  = mbs; };
-	void setStepsPerBatch  ( int    spb ) { mStepsPerBatch  = spb; };
-	void setDiscountFactor ( double dis ) { mDiscountFactor = dis; };
-	void setLearningRate   ( double lrt ) { mLearningRate   = lrt; };
-	void setEpsilonSteps   ( int    eps ) { mEpsilonSteps   = eps; };
 	void setFinalEpsilon   ( double  eps ) { mFinalEpsilon   = eps; };
-	void setNetUpdateRate  ( int    nur ) { mNetUpdateFrq   = nur; };
 	void setInitMemoryPop  ( int    imp ) { mInitMemoryPop  = imp; };
 
 
@@ -58,21 +54,11 @@ public:
 
 
 	int getInputSize() const { return mInputSize; };
-	int getNumActions() const { return mNumActions; };
+	int getNumActions() const { return mActionCount; };
 	
 	const Network& getQNetwork() const { return *mQNetwork; };
 
 private:
-	// configuration
-	int mInputSize;
-	int mNumActions;
-
-	int    mMiniBatchSize  = 32;
-	int    mHistoryLength  = 1;
-	float  mStepsPerBatch  = 4;
-	double mDiscountFactor = 0.99;
-	double mLearningRate   = 0.01;
-
 	qlearn_callback mCallback;
 
 	// neural net
@@ -81,9 +67,7 @@ private:
 	// strategy annealing
 	double mCurrentEpsilon = 1.0;
 	double mFinalEpsilon   = 0.1;
-	int    mEpsilonSteps   = 1e6;
-	int    mNetUpdateFrq   = 10000;
-	int    mInitMemoryPop;
+	std::size_t mInitMemoryPop;
 	int    mStepCounter    = 0;
 
 	// success tracking

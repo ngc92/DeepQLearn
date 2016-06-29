@@ -82,10 +82,10 @@ video::ITexture* texture = nullptr;
 
 void learn_thread( Network& target_net )
 {
-	QLearner learner(3, 3, 1e6, 1);
+	QLearner learner( QLearnerConfig(3, 3, 1e6) );
 	
 	Network network;
-    network << FcLayer(Matrix::Random(30, learner.getInputSize()));;
+	network << FcLayer(Matrix::Random(30, learner.getInputSize()));;
 	network << TanhLayer(Matrix::Zero(30, 1));
 	network << FcLayer(Matrix::Random(3, 30));
 	network << TanhLayer(Matrix::Zero(3, 1));
@@ -95,12 +95,8 @@ void learn_thread( Network& target_net )
 	Solver solver( std::move(prop) );
 	
 	std::fstream rewf("reward.txt", std::fstream::out);
-	learner.setEpsilonSteps(1e6);
-	learner.setQNetwork( network );
+	learner.setQNetwork( std::move(network) );
 	//learner.load("pnet");
-	learner.setLearningRate(2.5e-4f);
-	learner.setMiniBatchSize(32);
-	learner.setNetUpdateRate(2000);
 
 	PongGame game;
 	game.reset();

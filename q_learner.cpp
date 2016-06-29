@@ -28,15 +28,13 @@ Vector concat(const boost::circular_buffer<Vector>& b)
 	return result;
 }
 
-QLearner::QLearner(int input_size, int action_count, int memory_length, int history):
-	mInputSize(input_size * history),
-	mNumActions(action_count),
-	mHistoryLength( history )
+QLearner::QLearner( QLearnerConfig config ):
+	QLearnerConfig( std::move(config) )
 {
-	mMemory.set_capacity( memory_length );
+	mMemory.set_capacity( mMemoryLength );
 	mCurrentHistory.set_capacity( mHistoryLength );
 
-	mInitMemoryPop = std::min( memory_length, 100*mMiniBatchSize );
+	mInitMemoryPop = std::min( mMemoryLength, 100*mMiniBatchSize );
 }
 
 void QLearner::setQNetwork(Network net)
@@ -106,7 +104,7 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 	auto random_action = std::discrete_distribution<int>({1 - mCurrentEpsilon, mCurrentEpsilon});
 	if( random_action(mRandom))
 	{
-		auto ind_dst = std::uniform_int_distribution<int>(0, mNumActions-1); // this is inclusive, so we need -1
+		auto ind_dst = std::uniform_int_distribution<int>(0, mActionCount-1); // this is inclusive, so we need -1
 		action = ind_dst(mRandom);
 	}
 
@@ -163,7 +161,7 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		LearningEntry entry;
 		entry.situation = trans.situation;
 		entry.action = trans.action;
-		entry.q_values.resize( mNumActions );
+		entry.q_values.resize( mActionCount );
 
 		// best value that can be reached from here
 		float y = 0;

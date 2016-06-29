@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "layer.hpp" // necessary, so default work
 #include <vector>
 #include <memory>
 
@@ -10,20 +11,23 @@
 */
 class Network
 {
-	typedef std::shared_ptr<ILayer> layer_t;
+	typedef std::unique_ptr<ILayer> layer_t;
 public:
-	Network() {};
+	Network() = default;
+	~Network() = default;
+	Network( Network&& ) = default;
+	Network& operator=( Network&& ) = default;
 
 	template<class T>
 	Network& add_layer( T layer )
 	{
-		return add_layer_imp( std::make_shared<T>(std::move(layer)) );
+		return add_layer_imp( std::make_unique<T>(std::move(layer)) );
 	}
 
 	template<class T>
 	Network& operator<<( T&& layer )
 	{
-		return add_layer(layer);
+		return add_layer( std::move(layer) );
 	}
 
 	// processes the vector through the network
