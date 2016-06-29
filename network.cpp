@@ -30,3 +30,13 @@ void Network::update(Solver& solver)
         l->update(solver);
 	}
 }
+
+Network Network::clone() const
+{
+	Network newnet;
+	for(const auto& layer : mLayers)
+	{
+		newnet.mLayers.push_back( layer->clone() );
+	}
+	return newnet;
+}

@@ -77,8 +77,8 @@ int main()
 	QLearner learner(3, 3, 1e6, 1);
 	learner.setEpsilonSteps(1e6);
 	learner.setQNetwork( std::make_shared<Network<float>>(std::vector<LayerInfo>{
-														LayerInfo("input", learner.getInputSize()), 
-														LayerInfo("fc", 30), 
+														LayerInfo("input", learner.getInputSize()),
+														LayerInfo("fc", 30),
 														LayerInfo("nl tanh", 30),
 														LayerInfo("fc", 3)
 														}) );
@@ -97,7 +97,7 @@ int main()
 	int last = 0;
 	int learn_anneal = 0;
 
-/*	learner.setCallback( [&](const QLearner& l ) {
+	learner.setCallback( [&](const QLearner& l ) {
 			std::cout << games << "\n";
 			std::cout << learner.getCurrentEpsilon() << " - " << learner.getAverageEpisodeReward() << "\n";
 			rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
@@ -109,13 +109,13 @@ int main()
 			{
 				build_image(learner);
 				best = learner.getAverageEpisodeReward();
-				learner.save("pnet");
+//				learner.save("pnet");
 				last = games / 1000;
 			}
 			if(learn_anneal < 100)
 			{
 				learn_anneal++;
-			} 
+			}
 			else if(learn_anneal == 100)
 			{
 				learner.setLearningRate(1e-5f);
@@ -129,10 +129,10 @@ int main()
 				learner.setLearningRate(1e-7f);
 				learn_anneal++;
 			}
-	} );*/
-	
+	} );
+
 	device = createDevice(video::EDT_SOFTWARE, core::dimension2du(800, 600));
-	
+
 	int step = 0;
 	while(device->run())
 	{
@@ -140,12 +140,12 @@ int main()
 		float r = game.step(ac);
 		ac = learner.learn_step( game.data(), r, r != 0 );
 		step++;
-		if(drawing && games % 10000 < 5 )
+		if(drawing && games % 10000 < 0 )
 		{
 			device->getVideoDriver()->beginScene();
 			device->getVideoDriver()->draw2DPolygon( core::position2di(game.ballx * 400, game.bally * 400+100), 10);
 			device->getVideoDriver()->draw2DLine(core::position2di(400, (game.posy-BAT_SIZE)*400+100), core::position2di(400, (game.posy+BAT_SIZE)*400+100));
-			
+
 			float q = learner.getCurrentQuality();
 			float r = learner.getAverageEpisodeReward();
 			device->getVideoDriver()->draw2DLine( core::position2di(500, 600), core::position2di(500, 200-200*q));
@@ -153,7 +153,7 @@ int main()
 			device->getVideoDriver()->draw2DLine( core::position2di(520, 600), core::position2di(520, 200-200*r));
 			device->getVideoDriver()->endScene();
 			device->sleep(10);
-		} else 
+		} else
 		{
 			if(step % 1000 == 0)
 			{
@@ -166,9 +166,9 @@ int main()
 				device->getVideoDriver()->endScene();
 			}
 		}
-		
-		
-		
+
+
+
 		if( r != 0)
 		{
 			game.reset();
@@ -183,7 +183,7 @@ int main()
 void build_image(QLearner& l)
 {
 	std::vector<unsigned char> grayscale(100*100*3);
-	
+
 	PongGame game;
 	game.reset();
 	game.bvx = 1;
@@ -193,13 +193,13 @@ void build_image(QLearner& l)
 		{
 			game.ballx = x / 100.0;
 			game.bally = y / 100.0;
-			float* r = l.assess( game.data() );
+			const float* r = l.assess( game.data() );
 			grayscale[(100*y+x)*3] = (r[0] > r[1] && r[0] > r[2]) ? unsigned((r[0]+1)*127) : 0;
 			grayscale[(100*y+x)*3+1] = (r[1] > r[0] && r[1] > r[2]) ? unsigned((r[1]+1)*127) : 0;
 			grayscale[(100*y+x)*3+2] = (r[2] > r[0] && r[2] > r[1]) ? unsigned((r[2]+1)*127) : 0;
 		}
 	}
-	
+
 	auto img = device->getVideoDriver()->createImageFromData(irr::video::ECF_R8G8B8, irr::core::dimension2du(100, 100), &grayscale[0], false, false);
 	texture = device->getVideoDriver()->addTexture("image", img);
 }

@@ -17,3 +17,8 @@ void FcLayer::update(Solver& solver)
 {
 	solver.update( mMatrix );
 }
+
+std::unique_ptr<ILayer> FcLayer::clone() const
+{
+	return std::unique_ptr<ILayer>( new FcLayer(*this) );
+}

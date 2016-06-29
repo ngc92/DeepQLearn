@@ -32,4 +32,6 @@ public:
 
 	// update the parameters
 	virtual void update(Solver& solver) = 0;
+	
+	virtual std::unique_ptr<ILayer> clone() const = 0;
 };

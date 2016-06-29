@@ -29,19 +29,14 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11" />
 			<Add option="-Wall" />
+			<Add option="-std=c++11" />
 			<Add directory="../src" />
 			<Add directory="../fann" />
 		</Compiler>
 		<Linker>
 			<Add library="irrlicht" />
 		</Linker>
-		<Unit filename="../fann/fann_activation.h" />
-		<Unit filename="../fann/fann_internal.h" />
-		<Unit filename="../fann/floatfann.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="../src/QLearner.cpp" />
 		<Unit filename="../src/QLearner.h" />
 		<Unit filename="../src/fc_layer.hpp" />
@@ -49,7 +44,6 @@
 		<Unit filename="../src/layer.hpp" />
 		<Unit filename="../src/network.hpp" />
 		<Unit filename="main.cpp" />
-		<Unit filename="viewer.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

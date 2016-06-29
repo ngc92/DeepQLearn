@@ -3,14 +3,14 @@
 
 #include "layer.hpp"
 
-class FcLayer : public ILayer
+class TanhLayer : public ILayer
 {
 public:
-	explicit FcLayer(Matrix p) : mMatrix(p) {};
+	explicit TanhLayer(Matrix p) : mBias(p) {};
 
-	LayerType getType() const override { return LayerType::FullyConnected; };
+	LayerType getType() const override { return LayerType::ReLU; };
 
-	const Matrix& getParameter() const { return mMatrix; };
+	const Matrix& getParameter() const { return mBias; };
 
 	// propagates input forward and calculates output
 	Vector process(const Vector& input) const override;
@@ -22,5 +22,5 @@ public:
 	
 	std::unique_ptr<ILayer> clone() const override;
 private:
-	Matrix mMatrix;
+	Matrix mBias;
 };

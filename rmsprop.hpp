@@ -9,6 +9,8 @@ public:
 	RMSProp(double lambda, double rate, double epsilon);
 
 	void updateParameter(Matrix& parameter, const Matrix& gradient) override;
+	
+	void setRate( double new_rate ) { rate = new_rate; };
 
 private:
 	double lambda;

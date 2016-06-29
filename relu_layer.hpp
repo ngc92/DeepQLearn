@@ -19,6 +19,8 @@ public:
 	Vector backward(const Vector& error, const ComputationNode& compute, Solver& solver) const override;
 
 	void update(Solver& solver) override;
+	
+	std::unique_ptr<ILayer> clone() const override;
 private:
 	Matrix mBias;
 };

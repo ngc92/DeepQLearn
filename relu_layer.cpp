@@ -1,6 +1,5 @@
 #include "relu_layer.hpp"
 #include "solver.hpp"
-#include <functional>
 
 Vector ReLULayer::process(const Vector& input) const
 {
@@ -18,4 +17,9 @@ Vector ReLULayer::backward(const Vector& error, const ComputationNode& compute, 
 void ReLULayer::update(Solver& solver)
 {
 	solver.update( mBias );
+}
+
+std::unique_ptr<ILayer> ReLULayer::clone() const
+{
+	return std::unique_ptr<ILayer>( new ReLULayer(*this) );
 }

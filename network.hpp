@@ -32,6 +32,9 @@ public:
 
 	// update all layers
 	void update(Solver& solver);
+	
+	// creates a deep copy of the network
+	Network clone() const;
 
 private:
 	Network& add_layer_imp( layer_t layer );
