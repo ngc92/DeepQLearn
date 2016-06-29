@@ -5,6 +5,8 @@
 #include <vector>
 #include <memory>
 
+namespace net
+{
 /*! \class Network
 	\brief Simple Feed Forward Network.
 	\details Currently represents a simple feed forward network of layers.
@@ -45,3 +47,4 @@ private:
 
 	std::vector<layer_t> mLayers;
 };
+}

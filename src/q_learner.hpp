@@ -8,6 +8,9 @@ typedef float float_type;
 #include <string>
 #include "fwd.hpp"
 
+class QLearner;
+using qlearn_callback = std::function<void(const QLearner& learner)>;
+
 struct LearningEntry
 {
 	std::vector<float_type> situation;
@@ -20,17 +23,19 @@ class QLearner
 public:
 	QLearner( int input_size, int action_count, int memory_length, int history = 1 );
 	~QLearner();
-	
+
+	void setCallback( qlearn_callback cb ) { mCallback = cb; };
+
 	void setQNetwork(std::shared_ptr<Network<float_type>> net);
 
 	// this puts a new learning step into the Q learner. It returns the
 	// action ID that the Q-learner wants to test next.
 	// gets current situation and reward that the last step generated.
 	int learn_step( const std::vector<float_type>& situation, float_type reward, bool terminal );
-	
+
 	// get the Q values of a configuration
-	float* assess( const std::vector<float_type>& situation );
-	
+	const float* assess( const std::vector<float_type>& situation );
+
 	// parameter setup
 	void setMiniBatchSize  ( int    mbs ) { mMiniBatchSize  = mbs; };
 	void setStepsPerBatch  ( int    spb ) { mStepsPerBatch  = spb; };
@@ -50,8 +55,8 @@ public:
 
 	double getCurrentEpsilon()       const  { return mCurrentEpsilon;   };
 	int    getNumberLearningSteps()  const  { return mLearnStepCounter; };
-	
-	
+
+
 	int getInputSize() const { return mInputSize; };
 	int getNumActions() const { return mNumActions; };
 
@@ -65,6 +70,8 @@ private:
 	float  mStepsPerBatch  = 4;
 	double mDiscountFactor = 0.99;
 	double mLearningRate   = 0.01;
+
+	qlearn_callback mCallback;
 
 	// neural net
 	std::shared_ptr<Network<float_type>> mQNetwork;
@@ -97,7 +104,7 @@ private:
 		float reward;
 		bool terminal;
 	};
-	
+
 	std::vector<LearningEntry> build_mini_batch(  );
 	void learn();
 
@@ -108,10 +115,10 @@ private:
 	// memory interface
 	void push_memory(); // adds mMemoryCache to memory;
 	MemoryEntry get_memory( int index ); // gets an element from memory
-	
+
 	int mLearnStepCounter = 0;
 	std::shared_ptr<Network<float_type>> mLearningNetwork;
 	std::shared_ptr<BatchTeacher<float_type>> mTeacher;
-	
+
 	int getAction( const std::shared_ptr<Network<float_type>>& network, const std::vector<float>& situation, float& quality );
 };

@@ -1,14 +1,13 @@
-
 #pragma once
 
 #include "layer.hpp"
 
+namespace net
+{
 class FcLayer : public ILayer
 {
 public:
-	explicit FcLayer(Matrix p) : mMatrix(p) {};
-
-	LayerType getType() const override { return LayerType::FullyConnected; };
+	explicit FcLayer(Matrix p) : mMatrix( std::move(p)) {};
 
 	const Matrix& getParameter() const { return mMatrix; };
 
@@ -24,3 +23,4 @@ public:
 private:
 	Matrix mMatrix;
 };
+}

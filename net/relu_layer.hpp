@@ -3,12 +3,12 @@
 
 #include "layer.hpp"
 
-class TanhLayer : public ILayer
+namespace net
+{
+class ReLULayer : public ILayer
 {
 public:
-	explicit TanhLayer(Matrix p) : mBias(p) {};
-
-	LayerType getType() const override { return LayerType::ReLU; };
+	explicit ReLULayer(Matrix p) : mBias(p) {};
 
 	const Matrix& getParameter() const { return mBias; };
 
@@ -24,3 +24,4 @@ public:
 private:
 	Matrix mBias;
 };
+}

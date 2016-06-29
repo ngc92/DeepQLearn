@@ -1,6 +1,8 @@
 #include "computation_node.hpp"
 #include "layer.hpp"
 
+namespace net
+{
 void ComputationNode::backpropagate( const Vector& error, Solver& solver )
 {
 	if(mLayer)
@@ -11,4 +13,5 @@ void ComputationNode::backpropagate( const Vector& error, Solver& solver )
 			mSource->backpropagate( mError, solver );
 		}
 	}
+}
 }

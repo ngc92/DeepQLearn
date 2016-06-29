@@ -4,8 +4,10 @@
 #include <unordered_map>
 #include <memory>
 
-class SolverTestAccess;
-class IUpdateRule;
+namespace net
+{
+	class SolverTestAccess;
+	class IUpdateRule;
 
 // non-polymorphic solver class that is responsible for general book keeping
 class Solver final
@@ -47,4 +49,4 @@ class IUpdateRule
 		virtual void updateParameter(Matrix& parameter, const Matrix& gradient) = 0;
 };
 
-
+}

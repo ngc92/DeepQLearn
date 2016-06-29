@@ -1,14 +1,13 @@
-
 #pragma once
 
 #include "layer.hpp"
 
-class ReLULayer : public ILayer
+namespace net
+{
+class TanhLayer : public ILayer
 {
 public:
-	explicit ReLULayer(Matrix p) : mBias(p) {};
-
-	LayerType getType() const override { return LayerType::ReLU; };
+	explicit TanhLayer(Matrix p) : mBias( std::move(p) ) {};
 
 	const Matrix& getParameter() const { return mBias; };
 
@@ -24,3 +23,4 @@ public:
 private:
 	Matrix mBias;
 };
+}

@@ -1,5 +1,7 @@
 #include "solver.hpp"
 
+namespace net
+{
 Solver::Solver(std::unique_ptr<IUpdateRule> rule ) : mUpdateRule( std::move(rule))
 {
 
@@ -33,4 +35,4 @@ void Solver::update(Matrix& param)
 	mUpdateRule->updateParameter(param, getGradient(param));
 	getGradient(param).setZero( param.rows(), param.cols() );
 }
-
+}

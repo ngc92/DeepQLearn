@@ -1,5 +1,4 @@
-#ifndef Q_LEARNER_CONFIG_H_INCLUDED
-#define Q_LEARNER_CONFIG_H_INCLUDED
+#pragma once
 
 #include <cstdint>
 
@@ -33,5 +32,3 @@ protected:
 	double      mFinalEpsilon   = 0.1;
 	std::size_t mEpsilonSteps   = 1e6;
 };
-
-#endif // Q_LEARNER_CONFIG_H_INCLUDED

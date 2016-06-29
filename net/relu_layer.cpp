@@ -1,6 +1,8 @@
 #include "relu_layer.hpp"
 #include "solver.hpp"
 
+namespace net
+{
 Vector ReLULayer::process(const Vector& input) const
 {
     return (mBias + input).cwiseMax(0);
@@ -21,5 +23,7 @@ void ReLULayer::update(Solver& solver)
 
 std::unique_ptr<ILayer> ReLULayer::clone() const
 {
-	return std::unique_ptr<ILayer>( new ReLULayer(*this) );
+	return std::make_unique<ReLULayer>(*this);
+}
+
 }

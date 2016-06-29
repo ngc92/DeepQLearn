@@ -3,6 +3,8 @@
 #include "config.h"
 #include <memory>
 
+namespace net
+{
 class ComputationNode final
 {
 public:
@@ -40,3 +42,4 @@ private:
 	// layer that processed this node
 	const ILayer* mLayer;
 };
+}

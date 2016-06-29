@@ -2,6 +2,8 @@
 #include "solver.hpp"
 #include <cmath>
 
+namespace net
+{
 Vector TanhLayer::process(const Vector& input) const
 {
     return (mBias + input).unaryExpr([](float x) { return std::tanh(x);} );
@@ -23,4 +25,5 @@ void TanhLayer::update(Solver& solver)
 std::unique_ptr<ILayer> TanhLayer::clone() const
 {
 	return std::unique_ptr<ILayer>( new TanhLayer(*this) );
+}
 }

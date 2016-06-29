@@ -3,6 +3,8 @@
 #include "solver.hpp"
 #include <unordered_map>
 
+namespace net
+{
 class RMSProp : public IUpdateRule
 {
 public:
@@ -22,3 +24,4 @@ private:
 
 	std::unordered_map<const number_t*, Matrix> mRMS;
 };
+}

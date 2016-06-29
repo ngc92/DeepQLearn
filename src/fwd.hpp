@@ -5,7 +5,6 @@
 template<class T>
 class Network;
 
-template<class T>
 class ILayer;
 
 template<class T>

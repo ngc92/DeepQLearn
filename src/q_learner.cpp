@@ -29,7 +29,7 @@ QLearner::QLearner(int input_size, int action_count, int memory_length, int hist
 {
 	mMemory.set_capacity( memory_length );
 	mCurrentHistory.set_capacity( mHistoryLength );
-	
+
 	mInitMemoryPop = std::min( memory_length, 100*mMiniBatchSize );
 }
 
@@ -37,7 +37,7 @@ void QLearner::setQNetwork(std::shared_ptr<Network<float_type>> net)
 {
 	mQNetwork = net;
 	mLearningNetwork = std::make_shared<Network<float_type>>(std::move(net->clone()));
-	
+
 	mTeacher = std::make_shared<BatchTeacher<float_type>>( mLearningNetwork, std::make_shared<RMSPROPWeightUpdater<float_type>>() );
 }
 
@@ -58,18 +58,20 @@ int QLearner::learn_step( const std::vector<float>& situation, float reward, boo
 	mStepCounter++;
 	if(mLearningNetwork && mStepCounter % mNetUpdateFrq == 0)
 	{
+		if( mCallback )
+			mCallback(*this);
+
 		// reset reward stats
 		mCurNetTotalReward = 0;
 		mCurNetTotalEpisodes = 0;
 
 		// replace network
-		std::cout << "update q net\n";
 		mQNetwork = std::make_shared<Network<float_type>>(mLearningNetwork->clone());
 	}
 
 	mCurrentHistory.push_back( situation );
 	auto hist = concat(mCurrentHistory);
-	
+
 	mMemoryCache.future   =  hist;
 	mMemoryCache.terminal =  terminal;
 	mMemoryCache.reward   =  reward;
@@ -105,19 +107,19 @@ int QLearner::learn_step( const std::vector<float>& situation, float reward, boo
 	}
 
 	mMemoryCache.action = action;
-	
-	
-	// 
+
+
+	//
 	if( mMemory.size() > mInitMemoryPop)
 		learn();
-	
+
 	return action;
 }
 
-float* QLearner::assess( const std::vector<float>& situation )
+const float* QLearner::assess( const std::vector<float>& situation )
 {
 	mQNetwork->forward(situation);
-	return nullptr;
+	return mQNetwork->getOutput().begin();
 }
 
 int QLearner::getAction( const std::shared_ptr<Network<float_type>>& network, const std::vector<float>& situation, float& quality )
@@ -153,7 +155,7 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 	{
 		int sample = std::uniform_int_distribution<int>(0, mMemory.size() - 1)(mRandom);
 		MemoryEntry trans = get_memory( sample );
-		
+
 		LearningEntry entry;
 		entry.situation = trans.situation;
 		entry.action = trans.action;
@@ -173,7 +175,7 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		mQNetwork->forward(trans.situation);
 		boost::copy(mQNetwork->getOutput(), entry.q_values.begin());
 		entry.q_values[trans.action] = y;
-		
+
 		dataset.push_back(entry);
 	}
 	return dataset;
@@ -194,7 +196,7 @@ void QLearner::learn()
 	{
 		mTeacher->sample_supervised( entry.situation, entry.q_values );
 	}
-	
+
 	float error = mTeacher->finishMiniBatch();
 	/// \todo ensure that error does not diverge
 	mAverageError = mFloatingMean * mAverageError + (1-mFloatingMean)*error;

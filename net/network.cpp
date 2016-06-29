@@ -1,5 +1,7 @@
 #include "network.hpp"
 
+namespace net
+{
 Network& Network::add_layer_imp( layer_t layer )
 {
 	mLayers.push_back( std::move(layer) );
@@ -38,4 +40,5 @@ Network Network::clone() const
 		newnet.mLayers.push_back( layer->clone() );
 	}
 	return newnet;
+}
 }

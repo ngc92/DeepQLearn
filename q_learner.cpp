@@ -1,7 +1,7 @@
 #include "q_learner.hpp"
-#include "network.hpp"
-#include "computation_node.hpp"
-#include "rmsprop.hpp"
+#include "net/network.hpp"
+#include "net/computation_node.hpp"
+#include "net/rmsprop.hpp"
 
 #include <boost/range/algorithm/max_element.hpp>
 #include <iostream>
@@ -29,12 +29,9 @@ Vector concat(const boost::circular_buffer<Vector>& b)
 }
 
 QLearner::QLearner( QLearnerConfig config ):
-	QLearnerConfig( std::move(config) )
+	QLearnerConfig( std::move(config) ), mMemory( mMemoryLength )
 {
-	mMemory.set_capacity( mMemoryLength );
 	mCurrentHistory.set_capacity( mHistoryLength );
-
-	mInitMemoryPop = std::min( mMemoryLength, 100*mMiniBatchSize );
 }
 
 void QLearner::setQNetwork(Network net)
@@ -72,14 +69,15 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 	}
 
 	mCurrentHistory.push_back( situation );
+	
 	auto hist = concat(mCurrentHistory);
 
-	mMemoryCache.future   =  hist;
-	mMemoryCache.terminal =  terminal;
-	mMemoryCache.reward   =  reward;
+	mMemory.next().future   =  hist;
+	mMemory.next().terminal =  terminal;
+	mMemory.next().reward   =  reward;
 	mCurrenEpisodeReward  += reward;
-	if( mMemoryCache.situation.size() != 0)
-		push_memory();
+	if( mMemory.next().situation.size() != 0)
+		mMemory.push( mMemory.next() );
 
 	if( terminal )
 	{
@@ -90,14 +88,14 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 
 	int action = getAction( *mQNetwork, hist, mCurrentQuality );
 	if(mCurrentHistory.size() == mHistoryLength)
-		mMemoryCache.situation = hist;
+		mMemory.next().situation = hist;
 
 //	std::cout << mCurrentQuality << "\n";
 
 	mAverageQuality = mFloatingMean * mAverageQuality + (1-mFloatingMean) * mCurrentQuality;
 
 	// update the strategy: adapt epsilon
-	if( mCurrentEpsilon > mFinalEpsilon && mMemory.size() >  mInitMemoryPop)
+	if( mCurrentEpsilon > mFinalEpsilon)
 		mCurrentEpsilon -= (1.0 - mFinalEpsilon) / mEpsilonSteps;
 
 	// with certain probability choose a random action
@@ -108,14 +106,8 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 		action = ind_dst(mRandom);
 	}
 
-	mMemoryCache.action = action;
-
-
-	//
-	if( mMemory.size() > mInitMemoryPop)
-	{
-		learn(solver);
-	}
+	mMemory.next().action = action;
+	learn(solver);
 	
 	return action;
 }
@@ -134,17 +126,6 @@ int QLearner::getAction( const Network& network, const Vector& situation, float&
 	return row;
 }
 
-void QLearner::push_memory()
-{
-	mMemory.push_back( mMemoryCache );
-}
-
-auto QLearner::get_memory( int index ) -> MemoryEntry
-{
-	return mMemory[index]; /// \todo this requires coying and memory allocation.
-	/// not nice for performance
-}
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // 					training preparation thread
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -153,10 +134,10 @@ auto QLearner::get_memory( int index ) -> MemoryEntry
 std::vector<LearningEntry> QLearner::build_mini_batch(  )
 {
 	std::vector<LearningEntry> dataset;
+	dataset.reserve( mMiniBatchSize );
 	for(unsigned i = 0; i < mMiniBatchSize; ++i)
 	{
-		int sample = std::uniform_int_distribution<int>(0, mMemory.size() - 1)(mRandom);
-		MemoryEntry trans = get_memory( sample );
+		MemoryEntry trans = mMemory.get_random(mRandom);
 
 		LearningEntry entry;
 		entry.situation = trans.situation;
@@ -167,14 +148,14 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		float y = 0;
 		if( !trans.terminal )
 		{
-			int best = getAction(*mLearningNetwork, trans.future, y);
+			int best = getAction(*mQNetwork, trans.future, y);
 			// plus current reward
 			y *= mDiscountFactor;
 		}
 		y += trans.reward;
 
 		// get current output
-		auto result = (*mQNetwork)(trans.situation);
+		auto result = (*mLearningNetwork)(trans.situation);
 		entry.q_values = result.output();
 		entry.q_values[trans.action] = y;
 
@@ -189,6 +170,9 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 
 void QLearner::learn(Solver& solver)
 {
+	if(mMemory.size() < 1)
+		return;
+	
 	mLearnStepCounter++;
 	// set learning parameters
 	auto batch = build_mini_batch();

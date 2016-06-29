@@ -1,6 +1,8 @@
 #include "rmsprop.hpp"
 #include <cassert>
 
+namespace net
+{
 RMSProp::RMSProp(double l, double r, double e) : lambda(l), rate(r), epsilon(e)
 {
 }
@@ -32,4 +34,4 @@ void RMSProp::updateParameter(Matrix& parameter, const Matrix& gradient)
 	auto rms = updateRMS(parameter, gradient);
 	parameter -= (rate * gradient.array() / sqrt(rms.array() + epsilon)).matrix();
 }
-
+}

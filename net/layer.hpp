@@ -3,19 +3,11 @@
 #include "config.h"
 #include "computation_node.hpp"
 
-enum class LayerType
+namespace net
 {
-	FullyConnected,
-	Bias,
-	ReLU,
-};
-
 class ILayer
 {
 public:
-	/// \todo fix this function!
-	virtual LayerType getType() const = 0;
-
 	/// call notation to pass a computation through this layer.
 	ComputationNode operator()(ComputationNode input ) const
 	{
@@ -37,3 +29,4 @@ private:
 	/// propagates input forward and calculates output.
 	virtual Vector process(const Vector& input) const = 0;
 };
+}

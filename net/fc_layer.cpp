@@ -2,6 +2,8 @@
 #include "solver.hpp"
 #include <iostream>
 
+namespace net
+{
 Vector FcLayer::process(const Vector& input) const
 {
     return mMatrix * input;
@@ -20,5 +22,6 @@ void FcLayer::update(Solver& solver)
 
 std::unique_ptr<ILayer> FcLayer::clone() const
 {
-	return std::unique_ptr<ILayer>( new FcLayer(*this) );
+	return std::make_unique<FcLayer>( *this );
+}
 }

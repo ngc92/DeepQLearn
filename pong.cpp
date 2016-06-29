@@ -2,20 +2,32 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <mutex>
 #include <irrlicht/irrlicht.h>
 #include <boost/lexical_cast.hpp>
 
 #include "config.h"
-#include "fc_layer.hpp"
-#include "relu_layer.hpp"
-#include "tanh_layer.hpp"
-#include "solver.hpp"
-#include "rmsprop.hpp"
-#include "network.hpp"
+#include "net/fc_layer.hpp"
+#include "net/relu_layer.hpp"
+#include "net/tanh_layer.hpp"
+#include "net/solver.hpp"
+#include "net/rmsprop.hpp"
+#include "net/network.hpp"
+
+using namespace net;
 
 using namespace irr;
 
 const float BAT_SIZE = 0.05;
+
+Vector dconv(float val, float min, float max, int steps)
+{
+	float p = (val - min) / (max - min);
+	int rp = std::min(steps-1, std::max(0, int(steps * p)));
+	Vector result = Matrix::Zero(steps, 1);
+	result[rp] = 1;
+	return result;
+}
 
 struct PongGame
 {
@@ -27,11 +39,11 @@ struct PongGame
 
 	void reset()
 	{
-		ballx = (rand() % 101) / 100.f;
+		ballx = 0.6;
 		bally = (rand() % 101) / 100.f;
 		bvx = 1;
 		bvy = 0;//(rand() % 101 - 50) / 20.f;
-		posy = 0.5;
+		posy = (rand() % 101) / 100.f;
 	}
 
 	float step( int ac )
@@ -69,8 +81,8 @@ struct PongGame
 
 	Vector data() const
 	{
-		auto vec = Vector(3);
-		vec << ballx, bally, posy;
+		auto vec = Vector(20);
+		vec << dconv(bally, 0, 1, 10) , dconv(posy, 0, 1, 10);
 		return vec;
 	}
 };
@@ -79,15 +91,16 @@ void build_image(const QLearner& l);
 
 IrrlichtDevice* device;
 video::ITexture* texture = nullptr;
+std::mutex mTargetNet;
 
 void learn_thread( Network& target_net )
 {
-	QLearner learner( QLearnerConfig(3, 3, 1e6) );
+	QLearner learner( QLearnerConfig(20, 3, 1e6).update_interval(2000) );
 	
 	Network network;
-	network << FcLayer(Matrix::Random(30, learner.getInputSize()));;
+	network << FcLayer(Matrix::Random(30, learner.getInputSize()).array() - 0.5);
 	network << TanhLayer(Matrix::Zero(30, 1));
-	network << FcLayer(Matrix::Random(3, 30));
+	network << FcLayer((Matrix::Random(3, 30).array() - 0.5) / 5);
 	network << TanhLayer(Matrix::Zero(3, 1));
 	
 	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.0001));
@@ -113,6 +126,7 @@ void learn_thread( Network& target_net )
 			build_image(learner);
 			std::cout << " - - - - - - - - - - \n";
 			
+			std::lock_guard<std::mutex> lck(mTargetNet);
 			target_net = learner.getQNetwork().clone();
 	} );
 
@@ -124,10 +138,10 @@ void learn_thread( Network& target_net )
 		} else if ( games < 10000 )
 		{
 			rmsprop->setRate(0.0001);
-		} else
+		} /*else
 		{
 			rmsprop->setRate(0.000001);
-		}
+		}*/
 
 		float r = game.step(ac);
 		ac = learner.learn_step( game.data(), r, game.ballx > 1, solver );
@@ -158,8 +172,11 @@ int main()
 	{
 		step++;
 		float v;
-		int ac = QLearner::getAction(network, game.data(), v);
-		game.step(ac);
+		{
+			std::lock_guard<std::mutex> lck(mTargetNet);
+			int ac = QLearner::getAction(network, game.data(), v);
+			game.step(ac);
+		}
 		
 		
 		device->getVideoDriver()->beginScene();
@@ -196,7 +213,7 @@ void build_image(const QLearner& l)
 	{
 		for(int x = 0; x < 100; ++x)
 		{
-			game.ballx = x / 100.0;
+			game.posy = x / 100.0;
 			game.bally = y / 100.0;
 			Vector r = l.assess( game.data() );
 			grayscale[(100*y+x)*3] = (r[0] > r[1] && r[0] > r[2]) ? v(r[0]) : 0;
