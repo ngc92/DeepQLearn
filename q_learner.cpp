@@ -68,16 +68,14 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 		mQNetwork = std::make_shared<Network>(mLearningNetwork->clone());
 	}
 
+	/// \attention This line allocates
 	mCurrentHistory.push_back( situation );
 	
+	/// \attention This line allocates
 	auto hist = concat(mCurrentHistory);
-
-	mMemory.next().future   =  hist;
-	mMemory.next().terminal =  terminal;
-	mMemory.next().reward   =  reward;
+	/// \attention This line allocates
+	mMemory.push( hist, terminal, reward );
 	mCurrenEpisodeReward  += reward;
-	if( mMemory.next().situation.size() != 0)
-		mMemory.push( mMemory.next() );
 
 	if( terminal )
 	{
@@ -85,13 +83,11 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 		mCurNetTotalEpisodes++;
 		mCurrenEpisodeReward = 0;
 	}
-
+	/// \attention This line allocates
 	int action = getAction( *mQNetwork, hist, mCurrentQuality );
-	if(mCurrentHistory.size() == mHistoryLength)
-		mMemory.next().situation = hist;
 
 //	std::cout << mCurrentQuality << "\n";
-
+//Eigen::internal::set_is_malloc_allowed(false);
 	mAverageQuality = mFloatingMean * mAverageQuality + (1-mFloatingMean) * mCurrentQuality;
 
 	// update the strategy: adapt epsilon
@@ -105,10 +101,11 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 		auto ind_dst = std::uniform_int_distribution<int>(0, mActionCount-1); // this is inclusive, so we need -1
 		action = ind_dst(mRandom);
 	}
-
-	mMemory.next().action = action;
+	
+	mMemory.prepare_next( std::move(hist), action );
 	learn(solver);
 	
+//	Eigen::internal::set_is_malloc_allowed(true);
 	return action;
 }
 
@@ -117,9 +114,10 @@ Vector QLearner::assess( const Vector& situation ) const
 	return (*mQNetwork)(situation).output();
 }
 
-int QLearner::getAction( const Network& network, const Vector& situation, float& quality )
+int QLearner::getAction( const Network& network, Vector situation, float& quality )
 {
-	auto result = network(situation);
+	/// \attention this causes dynamic memory allocation.
+	auto result = network( std::move(situation) );
 	// greedy algorithm that generates the next action.
 	int row, col;
 	quality = result.output().maxCoeff(&row,&col);
@@ -137,10 +135,11 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 	dataset.reserve( mMiniBatchSize );
 	for(unsigned i = 0; i < mMiniBatchSize; ++i)
 	{
-		MemoryEntry trans = mMemory.get_random(mRandom);
+		/// \attention this line allocates!
+		auto trans = mMemory.get_random(mRandom);
 
 		LearningEntry entry;
-		entry.situation = trans.situation;
+		entry.situation = std::move(trans.situation);
 		entry.action = trans.action;
 		entry.q_values.resize( mActionCount );
 
@@ -148,14 +147,14 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		float y = 0;
 		if( !trans.terminal )
 		{
-			int best = getAction(*mQNetwork, trans.future, y);
+			int best = getAction(*mQNetwork, std::move(trans.future), y);
 			// plus current reward
 			y *= mDiscountFactor;
 		}
 		y += trans.reward;
 
 		// get current output
-		auto result = (*mLearningNetwork)(trans.situation);
+		auto result = (*mLearningNetwork)(entry.situation);
 		entry.q_values = result.output();
 		entry.q_values[trans.action] = y;
 

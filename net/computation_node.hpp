@@ -11,7 +11,7 @@ public:
 	// ComputationNode at the beginning of the chain, just outputting the initial value
 	explicit ComputationNode( Vector startvec ) :
 		mSource( nullptr ),
-		mOutput( startvec ),
+		mOutput( std::move(startvec) ),
 		mLayer( nullptr )
 	{
 	}
@@ -19,7 +19,7 @@ public:
 	ComputationNode( ComputationNode in, Vector out, const ILayer* l ) :
 		/// \todo this is not nice, it requires us to do a dynamic memory allocation here.
 		mSource( std::unique_ptr<ComputationNode>( new ComputationNode(std::move(in)) ) ),
-		mOutput( out ), mLayer( l )
+		mOutput( std::move(out) ), mLayer( l )
 	{
 	}
 

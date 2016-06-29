@@ -33,8 +33,8 @@ public:
 	}
 
 	// processes the vector through the network
-	ComputationNode forward(const Vector& input) const;
-	ComputationNode operator()( const Vector& input ) const;
+	ComputationNode forward( Vector input) const;
+	ComputationNode operator()( Vector input ) const;
 
 	// update all layers
 	void update(Solver& solver);

@@ -89,5 +89,5 @@ private:
 	int mLearnStepCounter = 0;
 	std::shared_ptr<Network> mLearningNetwork;
 public:
-	static int getAction( const Network& network, const Vector& situation, float& quality );
+	static int getAction( const Network& network, Vector situation, float& quality );
 };
