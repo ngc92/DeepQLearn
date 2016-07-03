@@ -15,6 +15,8 @@
 #include "net/rmsprop.hpp"
 #include "net/network.hpp"
 
+#include "games/collect.h"
+
 
 using namespace net;
 
@@ -110,7 +112,7 @@ std::mutex mTargetNet;
 
 void learn_thread( Network& target_net )
 {
-	QLearner learner( QLearnerConfig(40, 3, 30000).epsilon_steps(200000).update_interval(200).batch_size(64) );
+	QLearner learner( QLearnerConfig(40, 3, 30000).epsilon_steps(200000).update_interval(20000).batch_size(64) );
 	
 	Network network;
 	network << FcLayer((Matrix::Random(30, learner.getInputSize()).array() - 0.5) / 5);
@@ -146,7 +148,7 @@ void learn_thread( Network& target_net )
 			std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
 						std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
 			last_time = std::chrono::high_resolution_clock::now();
-			std::cout << Eigen::internal::malloc_counter() << "\n";
+//			std::cout << Eigen::internal::malloc_counter() << "\n";
 			std::cout << " - - - - - - - - - - \n";
 			std::lock_guard<std::mutex> lck(mTargetNet);
 			target_net = learner.getQNetwork().clone();
@@ -187,6 +189,10 @@ void learn_thread( Network& target_net )
 extern int status;
 int main()
 {
+	
+	Collect test;
+	test.restart();
+	
 	Network network;
 	std::thread learner( learn_thread, std::ref(network) );
 	learner.detach();
@@ -202,6 +208,7 @@ int main()
 	int step = 0;
 	while(device->run())
 	{
+		test.step(1);
 		step++;
 		float v;
 		{
@@ -218,14 +225,17 @@ int main()
 		//device->getVideoDriver()->draw2DLine( core::position2di(500, 600), core::position2di(500, 200-200*q));
 		device->getVideoDriver()->draw2DImage(texture, core::position2di(600, 0));
 		//device->getVideoDriver()->draw2DLine( core::position2di(520, 600), core::position2di(520, 200-200*r));
+		
+		test.visualize(*device->getVideoDriver(), core::recti(10, 10, 300, 300));
+		
 		device->getVideoDriver()->endScene();
-		device->sleep(10);
+		device->sleep(50);
 
 		if( game.ballx > 1.0 )
 		{
 			game.reset();
 			games++;
-			device->sleep(100);
+			//device->sleep(100);
 		}
 	}
 //	learner.save("final");
