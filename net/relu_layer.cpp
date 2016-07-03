@@ -3,9 +3,9 @@
 
 namespace net
 {
-Vector ReLULayer::process(const Vector& input) const
+void ReLULayer::process(const Vector& input, Vector& out) const
 {
-    return (mBias + input).cwiseMax(0);
+	out = (mBias + input).cwiseMax(0);
 }
 
 Vector ReLULayer::backward(const Vector& error, const ComputationNode& compute, Solver& solver) const

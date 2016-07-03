@@ -13,7 +13,7 @@ public:
 	const Matrix& getParameter() const { return mBias; };
 
 	// propagates input forward and calculates output
-	Vector process(const Vector& input) const override;
+	void process(const Vector& input, Vector& out) const override;
 
 	// propagates error backward, and uses solver to track gradient
 	Vector backward(const Vector& error, const ComputationNode& compute, Solver& solver) const override;

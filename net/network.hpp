@@ -13,7 +13,7 @@ namespace net
 */
 class Network
 {
-	typedef std::unique_ptr<ILayer> layer_t;
+	typedef std::shared_ptr<ILayer> layer_t;
 public:
 	Network() = default;
 	~Network() = default;
@@ -35,6 +35,8 @@ public:
 	// processes the vector through the network
 	ComputationNode forward( Vector input) const;
 	ComputationNode operator()( Vector input ) const;
+	
+	const std::vector<layer_t>& getLayers() const { return mLayers; }
 
 	// update all layers
 	void update(Solver& solver);

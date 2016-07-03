@@ -4,9 +4,9 @@
 
 namespace net
 {
-Vector FcLayer::process(const Vector& input) const
+void FcLayer::process(const Vector& input, Vector& out) const
 {
-    return mMatrix * input;
+	out.noalias() = mMatrix * input;
 }
 
 Vector FcLayer::backward(const Vector& error, const ComputationNode& compute, Solver& solver) const

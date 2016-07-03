@@ -3,6 +3,7 @@
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <chrono>
 #include <irrlicht/irrlicht.h>
 #include <boost/lexical_cast.hpp>
 
@@ -14,19 +15,20 @@
 #include "net/rmsprop.hpp"
 #include "net/network.hpp"
 
+
 using namespace net;
 
 using namespace irr;
 
 const float BAT_SIZE = 0.05;
 
-Vector dconv(float val, float min, float max, int steps)
+Vector dconv(float val, float min, float max, int steps, Vector result)
 {
 	float p = (val - min) / (max - min);
 	int rp = std::min(steps-1, std::max(0, int(steps * p)));
-	Vector result = Matrix::Zero(steps, 1);
+	result = Matrix::Zero(steps, 1);
 	result[rp] = 1;
-	return result;
+	return std::move(result);
 }
 
 struct PongGame
@@ -36,6 +38,11 @@ struct PongGame
 	float bvx;
 	float bvy;
 	float posy;
+	
+	PongGame()
+	{
+		
+	}
 
 	void reset()
 	{
@@ -81,10 +88,18 @@ struct PongGame
 
 	Vector data() const
 	{
-		auto vec = Vector(20);
-		vec << dconv(bally, 0, 1, 10) , dconv(posy, 0, 1, 10);
+		auto vec = Vector(40);
+		auto d1 = dconv(bally, 0, 1, 20, std::move(dccache1));
+		auto d2 = dconv(posy, 0, 1, 20, std::move(dccache2));
+		vec << d1, d2;
+		dccache1 = std::move(d1);
+		dccache2 = std::move(d2);
 		return vec;
 	}
+	
+private:
+	mutable Vector dccache1;
+	mutable Vector dccache2;
 };
 
 void build_image(const QLearner& l);
@@ -95,12 +110,14 @@ std::mutex mTargetNet;
 
 void learn_thread( Network& target_net )
 {
-	QLearner learner( QLearnerConfig(20, 3, 1e6).update_interval(2000) );
+	QLearner learner( QLearnerConfig(40, 3, 30000).epsilon_steps(200000).update_interval(200).batch_size(64) );
 	
 	Network network;
-	network << FcLayer(Matrix::Random(30, learner.getInputSize()).array() - 0.5);
+	network << FcLayer((Matrix::Random(30, learner.getInputSize()).array() - 0.5) / 5);
 	network << TanhLayer(Matrix::Zero(30, 1));
-	network << FcLayer((Matrix::Random(3, 30).array() - 0.5) / 5);
+	/*network << FcLayer((Matrix::Random(30, 30).array() - 0.5) / 5);
+	network << ReLULayer(Matrix::Zero(30, 1));
+	*/network << FcLayer((Matrix::Random(3, 30).array() - 0.5) / 5);
 	network << TanhLayer(Matrix::Zero(3, 1));
 	
 	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.0001));
@@ -115,7 +132,9 @@ void learn_thread( Network& target_net )
 	game.reset();
 	int ac = 2;
 	int games = 0;
-
+	auto last_time = std::chrono::high_resolution_clock::now();
+	bool run = true;
+	
 	learner.setCallback( [&](const QLearner& l ) 
 	{
 			std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
@@ -124,27 +143,39 @@ void learn_thread( Network& target_net )
 			rewf.flush();
 			std::cout << learner.getNumberLearningSteps() << "\n";
 			build_image(learner);
+			std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+						std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
+			last_time = std::chrono::high_resolution_clock::now();
+			std::cout << Eigen::internal::malloc_counter() << "\n";
 			std::cout << " - - - - - - - - - - \n";
-			
 			std::lock_guard<std::mutex> lck(mTargetNet);
 			target_net = learner.getQNetwork().clone();
 	} );
 
-	while(true)
+	while(run)
 	{
 		if(games < 2000)
 		{
 			rmsprop->setRate(0.001);
-		} else if ( games < 10000 )
+		} else if ( games < 5000 )
+		{
+			rmsprop->setRate(0.0005);
+		} else
 		{
 			rmsprop->setRate(0.0001);
-		} /*else
-		{
-			rmsprop->setRate(0.000001);
-		}*/
+		}
 
 		float r = game.step(ac);
-		ac = learner.learn_step( game.data(), r, game.ballx > 1, solver );
+		try
+		{
+			ac = learner.learn_step( game.data(), r, game.ballx > 1, solver );
+		} catch( std::exception& e)
+		{
+			std::cout << "EXCEPTION " << e.what() << "\n";
+		} catch( ... )
+		{
+			std::cout << "???";
+		}
 		if( game.ballx > 1.0 )
 		{
 			game.reset();
@@ -153,11 +184,12 @@ void learn_thread( Network& target_net )
 	}
 }
 
+extern int status;
 int main()
 {
 	Network network;
-	
 	std::thread learner( learn_thread, std::ref(network) );
+	learner.detach();
 	
 	std::fstream rewf("reward.txt", std::fstream::out);
 

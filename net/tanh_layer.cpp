@@ -4,9 +4,9 @@
 
 namespace net
 {
-Vector TanhLayer::process(const Vector& input) const
+void TanhLayer::process(const Vector& input, Vector& out) const
 {
-    return (mBias + input).unaryExpr([](float x) { return std::tanh(x);} );
+	out = (mBias + input).unaryExpr([](float x) { return std::tanh(x);} );
 }
 
 Vector TanhLayer::backward(const Vector& error, const ComputationNode& compute, Solver& solver) const

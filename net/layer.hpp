@@ -27,6 +27,6 @@ public:
 	virtual std::unique_ptr<ILayer> clone() const = 0;
 private:
 	/// propagates input forward and calculates output.
-	virtual Vector process(const Vector& input) const = 0;
+	virtual void process(const Vector& input, Vector& output) const = 0;
 };
 }

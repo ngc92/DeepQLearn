@@ -158,7 +158,7 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		entry.q_values = result.output();
 		entry.q_values[trans.action] = y;
 
-		dataset.push_back(entry);
+		dataset.push_back( std::move(entry) );
 	}
 	return dataset;
 }
