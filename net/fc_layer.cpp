@@ -15,10 +15,10 @@ void FcLayer::process(const Vector& input, Vector& out) const
 	out.noalias() = mMatrix * input;
 }
 
-Vector FcLayer::backward(const Vector& error, const ComputationNode& compute, Solver& solver) const
+void FcLayer::backward(const Vector& error, Vector& back, const ComputationNode& compute, Solver& solver) const
 {
 	solver(mMatrix, error * compute.input().transpose());
-	return mMatrix.transpose() * error;
+	back.noalias() = mMatrix.transpose() * error;
 }
 
 void FcLayer::update(Solver& solver)

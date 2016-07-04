@@ -20,7 +20,7 @@ public:
 	template<class Value, class Expr>
 	void operator()(const Value& val, Expr&& expr)
 	{
-		getGradient(val) += expr;
+		getGradient(val).noalias() += expr;
 	}
 
 	void update(Matrix& param);

@@ -25,7 +25,7 @@ public:
 	void forward( const ComputationNode& input, ComputationNode& output ) const;
 
 	/// propagates error backward, and uses solver to track gradient
-	virtual Vector backward(const Vector& error, const ComputationNode& compute, Solver& solver) const = 0;
+	virtual void backward(const Vector& error, Vector& back, const ComputationNode& compute, Solver& solver) const = 0;
 
 	/// update the parameters according to the solver.
 	virtual void update(Solver& solver) = 0;

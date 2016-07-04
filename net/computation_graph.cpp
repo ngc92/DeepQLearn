@@ -1,4 +1,4 @@
-#include "computation_graph.h"
+#include "computation_graph.hpp"
 #include "computation_node.hpp"
 #include "network.hpp"
 
@@ -26,7 +26,7 @@ namespace net
 	
 	const Vector& ComputationGraph::forward( const Vector& input )
 	{
-		mInputNode = std::make_shared<ComputationNode>(input);
+		mInputNode->out_cache() = input;
 		std::shared_ptr<ComputationNode> previous = mInputNode;
 
 		for(const auto& layer : mLayers)

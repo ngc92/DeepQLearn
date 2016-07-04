@@ -14,12 +14,11 @@ void ReLULayer::process(const Vector& input, Vector& out) const
 	out = (mBias + input).cwiseMax(0);
 }
 
-Vector ReLULayer::backward(const Vector& error, const ComputationNode& compute, Solver& solver) const
+void ReLULayer::backward(const Vector& error, Vector& back, const ComputationNode& compute, Solver& solver) const
 {
 	auto deriv = [](number_t v) {return v > 0 ? 1 : 0;};
-	Matrix E =  error.array() * (compute.output().unaryExpr(deriv)).array();
-	solver(mBias, E);
-	return E;
+	back = error.array() * (compute.output().unaryExpr(deriv)).array();
+	solver(mBias, back);
 }
 
 void ReLULayer::update(Solver& solver)

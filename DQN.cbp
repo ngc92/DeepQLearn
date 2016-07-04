@@ -39,13 +39,9 @@
 		</Linker>
 		<Unit filename="config.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="memory_cache.cpp" />
-		<Unit filename="memory_cache.hpp" />
-		<Unit filename="net/computation_graph.h" />
+		<Unit filename="net/computation_graph.cpp" />
 		<Unit filename="net/computation_node.cpp" />
 		<Unit filename="net/computation_node.hpp" />
-		<Unit filename="net/evaluator.cpp" />
-		<Unit filename="net/evaluator.h" />
 		<Unit filename="net/fc_layer.cpp" />
 		<Unit filename="net/fc_layer.hpp" />
 		<Unit filename="net/layer.cpp" />
@@ -61,10 +57,14 @@
 		<Unit filename="net/tanh_layer.cpp" />
 		<Unit filename="net/tanh_layer.hpp" />
 		<Unit filename="pong.cpp" />
-		<Unit filename="q_learner.cpp" />
-		<Unit filename="q_learner.hpp" />
-		<Unit filename="q_learner_config.cpp" />
-		<Unit filename="q_learner_config.h" />
+		<Unit filename="qlearner/memory.cpp" />
+		<Unit filename="qlearner/memory.hpp" />
+		<Unit filename="qlearner/qconfig.cpp" />
+		<Unit filename="qlearner/qconfig.hpp" />
+		<Unit filename="qlearner/qcore.cpp" />
+		<Unit filename="qlearner/qcore.hpp" />
+		<Unit filename="qlearner/qlearner.cpp" />
+		<Unit filename="qlearner/qlearner.hpp" />
 		<Unit filename="test/solver_test.cpp" />
 		<Extensions>
 			<code_completion />

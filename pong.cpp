@@ -1,4 +1,4 @@
-#include "q_learner.hpp"
+#include "qlearner/qlearner.hpp"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -17,6 +17,7 @@
 
 
 using namespace net;
+using namespace qlearn;
 
 using namespace irr;
 
@@ -86,9 +87,9 @@ struct PongGame
 		return 0;
 	}
 
-	Vector data() const
+	const Vector& data() const
 	{
-		auto vec = Vector(40);
+		vec.resize(40);
 		auto d1 = dconv(bally, 0, 1, 20, std::move(dccache1));
 		auto d2 = dconv(posy, 0, 1, 20, std::move(dccache2));
 		vec << d1, d2;
@@ -98,11 +99,12 @@ struct PongGame
 	}
 	
 private:
+	mutable Vector vec;
 	mutable Vector dccache1;
 	mutable Vector dccache2;
 };
 
-void build_image(QLearner& l);
+void build_image(qlearn::QLearner& l);
 
 IrrlichtDevice* device;
 video::ITexture* texture = nullptr;
@@ -110,23 +112,24 @@ std::mutex mTargetNet;
 
 void learn_thread( Network& target_net )
 {
-	QLearner learner( QLearnerConfig(40, 3, 30000).epsilon_steps(200000).update_interval(200).batch_size(64) );
+	Config config(40, 3, 3000);
+	config.epsilon_steps(200000).update_interval(2000).batch_size(64);
 	
 	Network network;
-	network << FcLayer((Matrix::Random(30, learner.getInputSize()).array() - 0.5) / 5);
+	network << FcLayer((Matrix::Random(30, 40).array() - 0.5) / 5);
 	network << TanhLayer(Matrix::Zero(30, 1));
 	/*network << FcLayer((Matrix::Random(30, 30).array() - 0.5) / 5);
 	network << ReLULayer(Matrix::Zero(30, 1));
 	*/network << FcLayer((Matrix::Random(3, 30).array() - 0.5) / 5);
 	network << TanhLayer(Matrix::Zero(3, 1));
 	
+	qlearn::QLearner learner( config, std::move(network) );
+	
 	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.0001));
 	RMSProp* rmsprop = prop.get();
 	Solver solver( std::move(prop) );
 	
 	std::fstream rewf("reward.txt", std::fstream::out);
-	learner.setQNetwork( std::move(network) );
-	//learner.load("pnet");
 
 	PongGame game;
 	game.reset();
@@ -135,21 +138,21 @@ void learn_thread( Network& target_net )
 	auto last_time = std::chrono::high_resolution_clock::now();
 	bool run = true;
 	
-	learner.setCallback( [&](QLearner& l ) 
+	learner.setCallback( [&](const QLearner& learner ) 
 	{
-			std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
-			std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
-			rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
-			rewf.flush();
-			std::cout << learner.getNumberLearningSteps() << "\n";
-			build_image(learner);
-			std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
-						std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
-			last_time = std::chrono::high_resolution_clock::now();
-			std::cout << Eigen::internal::malloc_counter() << "\n";
-			std::cout << " - - - - - - - - - - \n";
-			std::lock_guard<std::mutex> lck(mTargetNet);
-			target_net = learner.getQNetwork().clone();
+//		std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
+//		std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
+//		rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
+//		rewf.flush();
+//		std::cout << learner.getNumberLearningSteps() << "\n";
+//		build_image(learner);
+		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
+					std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
+		last_time = std::chrono::high_resolution_clock::now();
+		std::cout << Eigen::internal::malloc_counter() << "\n";
+		std::cout << " - - - - - - - - - - \n";
+		std::lock_guard<std::mutex> lck(mTargetNet);
+		target_net = learner.network().clone();
 	} );
 
 	while(run)
@@ -192,8 +195,6 @@ int main()
 	std::thread learner( learn_thread, std::ref(network) );
 	learner.detach();
 	
-	std::fstream rewf("reward.txt", std::fstream::out);
-
 	PongGame game;
 	game.reset();
 	int games = 0;
@@ -204,12 +205,12 @@ int main()
 	while(device->run())
 	{
 		step++;
-		float v;
+		/*float v;
 		{
 			std::lock_guard<std::mutex> lck(mTargetNet);
 			int ac = QLearner::getAction(graph, game.data(), v);
 			game.step(ac);
-		}
+		}*/
 		
 		
 		device->getVideoDriver()->beginScene();
@@ -229,9 +230,8 @@ int main()
 			device->sleep(100);
 		}
 	}
-//	learner.save("final");
 }
-
+/*
 void build_image(QLearner& l)
 {
 	std::vector<unsigned char> grayscale(100*100*3);
@@ -258,5 +258,5 @@ void build_image(QLearner& l)
 	auto img = device->getVideoDriver()->createImageFromData(irr::video::ECF_R8G8B8, irr::core::dimension2du(100, 100), &grayscale[0], false, false);
 	texture = device->getVideoDriver()->addTexture("image", img);
 }
-
+*/
 
