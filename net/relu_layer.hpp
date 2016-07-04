@@ -10,6 +10,9 @@ class ReLULayer : public ILayer
 public:
 	explicit ReLULayer(Matrix p) : mBias(p) {};
 
+	/// get the size of the layer output
+	std::size_t getOutputSize() const override;
+	
 	const Matrix& getParameter() const { return mBias; };
 
 	// propagates input forward and calculates output

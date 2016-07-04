@@ -33,9 +33,9 @@ public:
 	}
 
 	// processes the vector through the network
-	ComputationNode forward( Vector input) const;
+/*	ComputationNode forward( Vector input) const;
 	ComputationNode operator()( Vector input ) const;
-	
+*/	
 	const std::vector<layer_t>& getLayers() const { return mLayers; }
 
 	// update all layers

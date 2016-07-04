@@ -4,6 +4,12 @@
 
 namespace net
 {
+/// get the size of the layer output
+std::size_t FcLayer::getOutputSize() const
+{
+	return mMatrix.rows();
+}
+	
 void FcLayer::process(const Vector& input, Vector& out) const
 {
 	out.noalias() = mMatrix * input;

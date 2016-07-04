@@ -4,6 +4,12 @@
 
 namespace net
 {
+/// get the size of the layer output
+std::size_t TanhLayer::getOutputSize() const
+{
+	return mBias.size();
+}
+
 void TanhLayer::process(const Vector& input, Vector& out) const
 {
 	out = (mBias + input).unaryExpr([](float x) { return std::tanh(x);} );

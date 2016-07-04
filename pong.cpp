@@ -102,7 +102,7 @@ private:
 	mutable Vector dccache2;
 };
 
-void build_image(const QLearner& l);
+void build_image(QLearner& l);
 
 IrrlichtDevice* device;
 video::ITexture* texture = nullptr;
@@ -135,7 +135,7 @@ void learn_thread( Network& target_net )
 	auto last_time = std::chrono::high_resolution_clock::now();
 	bool run = true;
 	
-	learner.setCallback( [&](const QLearner& l ) 
+	learner.setCallback( [&](QLearner& l ) 
 	{
 			std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
 			std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
@@ -188,6 +188,7 @@ extern int status;
 int main()
 {
 	Network network;
+	ComputationGraph graph(network);
 	std::thread learner( learn_thread, std::ref(network) );
 	learner.detach();
 	
@@ -206,7 +207,7 @@ int main()
 		float v;
 		{
 			std::lock_guard<std::mutex> lck(mTargetNet);
-			int ac = QLearner::getAction(network, game.data(), v);
+			int ac = QLearner::getAction(graph, game.data(), v);
 			game.step(ac);
 		}
 		
@@ -231,7 +232,7 @@ int main()
 //	learner.save("final");
 }
 
-void build_image(const QLearner& l)
+void build_image(QLearner& l)
 {
 	std::vector<unsigned char> grayscale(100*100*3);
 

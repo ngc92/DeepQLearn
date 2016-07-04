@@ -5,11 +5,13 @@
 #include <functional>
 #include <string>
 
+#include "net/computation_graph.h"
+
 #include "q_learner_config.h"
 #include "memory_cache.hpp"
 
 class QLearner;
-using qlearn_callback = std::function<void(const QLearner& learner)>;
+using qlearn_callback = std::function<void(QLearner& learner)>;
 
 using namespace net;
 
@@ -36,7 +38,7 @@ public:
 	int learn_step( const Vector& situation, float reward, bool terminal, Solver& solver );
 
 	// get the Q values of a configuration
-	Vector assess( const Vector& situation ) const;
+	Vector assess( const Vector& situation );
 
 	// parameter setup
 	void setFinalEpsilon   ( double  eps ) { mFinalEpsilon   = eps; };
@@ -48,7 +50,7 @@ public:
 	double getAverageEpisodeReward() const;
 	float  getCurrentQuality()       const  { return mCurrentQuality;   };
 
-	double getCurrentEpsilon()       const  { return mCurrentEpsilon;   };
+	float  getCurrentEpsilon()       const  { return getStepEpsilon( mStepCounter );   };
 	int    getNumberLearningSteps()  const  { return mLearnStepCounter; };
 
 
@@ -62,10 +64,9 @@ private:
 
 	// neural net
 	std::shared_ptr<Network> mQNetwork;
+	ComputationGraph mQGraph;
 
 	// strategy annealing
-	double mCurrentEpsilon = 1.0;
-	double mFinalEpsilon   = 0.1;
 	int    mStepCounter    = 0;
 
 	// success tracking
@@ -88,6 +89,7 @@ private:
 
 	int mLearnStepCounter = 0;
 	std::shared_ptr<Network> mLearningNetwork;
+	ComputationGraph mLGraph;
 public:
-	static int getAction( const Network& network, Vector situation, float& quality );
+	static int getAction( ComputationGraph& graph, Vector situation, float& quality );
 };

@@ -1,37 +1,45 @@
 #include "computation_graph.h"
+#include "computation_node.hpp"
 #include "network.hpp"
 
 namespace net
 {
 	ComputationGraph::ComputationGraph( const Network& network ) : 
-		mInputNode( Vector() ),
+		mInputNode( std::make_shared<ComputationNode>(Vector()) )
 	{
 		mLayers = network.getLayers();
 	}
 	
-	void ComputationGraph::forward( const Vector& input )
+	using node_map = std::unordered_map<const ILayer*, std::shared_ptr<ComputationNode>>;
+	
+	std::shared_ptr<ComputationNode> getCompNode(node_map& nodes, const ILayer* layer, const std::shared_ptr<ComputationNode>& previous)
 	{
-		const auto& layers = net.getLayers();
-		mInputNode.output_cache() = input;
-		ComputationNode* previous = &mInputNode;
+		auto node = nodes.find( layer );
+		if( node != nodes.end() )
+		{
+			return node->second;
+		} else {
+			auto inserted = nodes.emplace(layer, std::make_shared<ComputationNode>(previous, Vector(), layer));
+			return inserted.first->second;
+		}
+	}
+	
+	const Vector& ComputationGraph::forward( const Vector& input )
+	{
+		mInputNode = std::make_shared<ComputationNode>(input);
+		std::shared_ptr<ComputationNode> previous = mInputNode;
 
-		for(const auto& layer : layers)
+		for(const auto& layer : mLayers)
 		{
 			// check if we have a node for this layer
-			auto node = mLayerNodeMap.find( layer.get() );
-			ComputationNode* target = nullptr;
-			if( node != mLayerNodeMap.end() )
-			{
-				target = &node->second;
-			} else {
-				auto inserted = mLayerNodeMap.emplace(layer.get(), ComputationNode(previous, layer.get()));
-				target = &inserted.first->second;
-			}
-			layer->forward( *target );
+			std::shared_ptr<ComputationNode> target = getCompNode( mLayerNodeMap, layer.get(), previous );
+			layer->forward( *previous, *target );
 			previous = target;
 		}
 		
 		mFinalNode = previous;
+		
+		return output();
 	}
 	
 	void ComputationGraph::clear()

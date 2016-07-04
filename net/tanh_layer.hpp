@@ -9,6 +9,9 @@ class TanhLayer : public ILayer
 public:
 	explicit TanhLayer(Matrix p) : mBias( std::move(p) ) {};
 
+	/// get the size of the layer output
+	std::size_t getOutputSize() const override;
+	
 	const Matrix& getParameter() const { return mBias; };
 
 	// propagates input forward and calculates output

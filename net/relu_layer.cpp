@@ -3,6 +3,12 @@
 
 namespace net
 {
+/// get the size of the layer output
+std::size_t ReLULayer::getOutputSize() const
+{
+	return mBias.size();
+}
+
 void ReLULayer::process(const Vector& input, Vector& out) const
 {
 	out = (mBias + input).cwiseMax(0);

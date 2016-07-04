@@ -13,6 +13,9 @@ public:
 	QLearnerConfig& discount_factor( double factor );
 	QLearnerConfig& update_interval( std::size_t interval );
 	QLearnerConfig& epsilon_steps( std::size_t steps );
+	
+	// get info
+	float getStepEpsilon( std::size_t num_step ) const;
 protected:
 	// problem config
 	std::size_t mInputSize;
@@ -29,6 +32,6 @@ protected:
 	std::size_t mNetUpdateFrq   = 10000;
 	
 	// strategy annealing
-	double      mFinalEpsilon   = 0.1;
+	float       mFinalEpsilon   = 0.1;
 	std::size_t mEpsilonSteps   = 1e6;
 };

@@ -9,6 +9,9 @@ class FcLayer : public ILayer
 public:
 	explicit FcLayer(Matrix p) : mMatrix( std::move(p)) {};
 
+	/// get the size of the layer output
+	std::size_t getOutputSize() const override;
+	
 	const Matrix& getParameter() const { return mMatrix; };
 
 	// propagates input forward and calculates output

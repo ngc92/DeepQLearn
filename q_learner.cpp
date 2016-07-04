@@ -37,7 +37,9 @@ QLearner::QLearner( QLearnerConfig config ):
 void QLearner::setQNetwork(Network net)
 {
 	mQNetwork = std::make_shared<Network>(std::move(net.clone()));
+	mQGraph = ComputationGraph( *mQNetwork );
 	mLearningNetwork = std::make_shared<Network>(std::move(net.clone()));
+	mLGraph = ComputationGraph( *mLearningNetwork );
 }
 
 QLearner::~QLearner()
@@ -66,6 +68,7 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 
 		// replace network
 		mQNetwork = std::make_shared<Network>(mLearningNetwork->clone());
+		mQGraph = ComputationGraph( *mQNetwork );
 	}
 
 	/// \attention This line allocates
@@ -84,18 +87,17 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 		mCurrenEpisodeReward = 0;
 	}
 	/// \attention This line allocates
-	int action = getAction( *mQNetwork, hist, mCurrentQuality );
+	int action = getAction( mQGraph, hist, mCurrentQuality );
 
 //	std::cout << mCurrentQuality << "\n";
 //Eigen::internal::set_is_malloc_allowed(false);
 	mAverageQuality = mFloatingMean * mAverageQuality + (1-mFloatingMean) * mCurrentQuality;
 
-	// update the strategy: adapt epsilon
-	if( mCurrentEpsilon > mFinalEpsilon)
-		mCurrentEpsilon -= (1.0 - mFinalEpsilon) / mEpsilonSteps;
-
+	
+	float eps = getStepEpsilon( mStepCounter );
+	
 	// with certain probability choose a random action
-	auto random_action = std::discrete_distribution<int>({1 - mCurrentEpsilon, mCurrentEpsilon});
+	auto random_action = std::discrete_distribution<int>({1 - eps, eps});
 	if( random_action(mRandom))
 	{
 		auto ind_dst = std::uniform_int_distribution<int>(0, mActionCount-1); // this is inclusive, so we need -1
@@ -109,18 +111,18 @@ int QLearner::learn_step( const Vector& situation, float reward, bool terminal, 
 	return action;
 }
 
-Vector QLearner::assess( const Vector& situation ) const
+Vector QLearner::assess( const Vector& situation )
 {
-	return (*mQNetwork)(situation).output();
+	return mQGraph.forward(situation);
 }
 
-int QLearner::getAction( const Network& network, Vector situation, float& quality )
+int QLearner::getAction( ComputationGraph& graph, Vector situation, float& quality )
 {
 	/// \attention this causes dynamic memory allocation.
-	auto result = network( std::move(situation) );
+	auto result = graph.forward( std::move(situation) );
 	// greedy algorithm that generates the next action.
 	int row, col;
-	quality = result.output().maxCoeff(&row,&col);
+	quality = result.maxCoeff(&row,&col);
 	return row;
 }
 
@@ -147,15 +149,15 @@ std::vector<LearningEntry> QLearner::build_mini_batch(  )
 		float y = 0;
 		if( !trans.terminal )
 		{
-			int best = getAction(*mQNetwork, std::move(trans.future), y);
+			int best = getAction(mQGraph, std::move(trans.future), y);
 			// plus current reward
 			y *= mDiscountFactor;
 		}
 		y += trans.reward;
 
 		// get current output
-		auto result = (*mLearningNetwork)(entry.situation);
-		entry.q_values = result.output();
+		auto result = mLGraph.forward(entry.situation);
+		entry.q_values = result;
 		entry.q_values[trans.action] = y;
 
 		dataset.push_back( std::move(entry) );
@@ -181,9 +183,9 @@ void QLearner::learn(Solver& solver)
 	// train an epoch
 	for(auto& entry : batch )
 	{
-		auto result = (*mLearningNetwork)( entry.situation );
-		auto error = result.output()  - entry.q_values;
-		result.backpropagate(error, solver );
+		auto result = mLGraph.forward( entry.situation );
+		auto error = result  - entry.q_values;
+		mLGraph.backpropagate(error, solver );
 		mse += error.squaredNorm();
 	}
 	

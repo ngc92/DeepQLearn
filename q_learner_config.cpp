@@ -35,3 +35,11 @@ QLearnerConfig& QLearnerConfig::epsilon_steps( std::size_t steps )
 	mEpsilonSteps = steps;
 	return *this;
 }
+
+float QLearnerConfig::getStepEpsilon( std::size_t num_step ) const
+{
+	if(num_step > mEpsilonSteps)
+		return mFinalEpsilon;
+	
+	return mFinalEpsilon + (1 - mFinalEpsilon) * (double)num_step / mEpsilonSteps;
+}
