@@ -38,13 +38,17 @@
 			<Add library="irrlicht" />
 		</Linker>
 		<Unit filename="config.h" />
+		<Unit filename="game_test.cpp" />
+		<Unit filename="games/collect.cpp" />
+		<Unit filename="games/collect.h" />
+		<Unit filename="games/game.h" />
+		<Unit filename="games/pong.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="memory_cache.cpp" />
 		<Unit filename="memory_cache.hpp" />
 		<Unit filename="net/computation_graph.h" />
 		<Unit filename="net/computation_node.cpp" />
 		<Unit filename="net/computation_node.hpp" />
-		<Unit filename="net/evaluator.cpp" />
 		<Unit filename="net/evaluator.h" />
 		<Unit filename="net/fc_layer.cpp" />
 		<Unit filename="net/fc_layer.hpp" />
@@ -60,12 +64,13 @@
 		<Unit filename="net/solver.hpp" />
 		<Unit filename="net/tanh_layer.cpp" />
 		<Unit filename="net/tanh_layer.hpp" />
-		<Unit filename="pong.cpp" />
+		<Unit filename="pong.cpp">
+			<Option link="0" />
+		</Unit>
 		<Unit filename="q_learner.cpp" />
 		<Unit filename="q_learner.hpp" />
 		<Unit filename="q_learner_config.cpp" />
 		<Unit filename="q_learner_config.h" />
-		<Unit filename="test/solver_test.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
