@@ -1,5 +1,6 @@
 #include "qlearner/qlearner.hpp"
-#include "qlearner/qcore.hpp"
+#include "qlearner/stats.h"
+#include "qlearner/action.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -35,14 +36,19 @@ void learn_thread( Network& target_net, ComputationGraph& target_graph, Game& ga
 	game.getCurrentState( state );
 	
 	Network network;
-	network << FcLayer((Matrix::Random(50, game.getNumInputs()).array()) / 5);
-	network << TanhLayer(Matrix::Zero(50, 1));
+	network << FcLayer((Matrix::Random(50, state.size()).array()) / 5);
+	network << ReLULayer(Matrix::Zero(50, 1));
 	network << FcLayer((Matrix::Random(50, 50).array()) / 7);
-	network << TanhLayer(Matrix::Zero(50, 1));
+	network << ReLULayer(Matrix::Zero(50, 1));
 	network << FcLayer((Matrix::Random(game.getNumInputs(), 50).array()) / 7);
-	network << TanhLayer(Matrix::Zero(game.getNumInputs(), 1));
+	network << ReLULayer(Matrix::Zero(game.getNumInputs(), 1));
 	
-	QLearner learner( Config( state.size(), game.getNumInputs(), 30000).epsilon_steps(200000).update_interval(2000).batch_size(64), std::move(network) );
+	QLearner learner( Config( state.size(), game.getNumInputs(), 30000).epsilon_steps(200000)
+																		.update_interval(2000)
+																		.batch_size(64)
+																		.init_memory_size(1000)
+																		.init_epsilon_time(3000)
+																		.discount_factor(0.7), std::move(network) );
 	
 	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.001));
 	RMSProp* rmsprop = prop.get();
@@ -55,12 +61,12 @@ void learn_thread( Network& target_net, ComputationGraph& target_graph, Game& ga
 	bool run = true;
 	int episodes = 0;
 	
-	learner.setCallback( [&](const QLearner& l ) 
+	learner.setCallback( [&](const QLearner& l, const Stats& stats ) 
 	{
-		//std::cout << learner.getCurrentEpsilon() << "\n";
-		//std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
-		//rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
-		//rewf.flush();
+		std::cout << episodes << ": " << learner.getCurrentEpsilon() << "\n";
+		std::cout << stats.getSmoothReward() << " (" <<  stats.getSmoothQVal() << ", " << stats.getSmoothMSE() << ")\n";
+		rewf << stats.getSmoothReward() << "\t" <<  stats.getSmoothQVal() << "\t" << stats.getSmoothMSE() << " " << learner.getCurrentEpsilon()  << "\n";
+		rewf.flush();
 //		std::cout << learner.getNumberLearningSteps() << "\n";
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";

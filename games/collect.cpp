@@ -23,22 +23,23 @@ int Collect::getNumInputs() const
 /** @brief getCurrentState  */
 void Collect::getCurrentState(Vector& target) const
 {
-	if(target.size() < 10)
-		target.resize(10);
+	const int size = (2*NUM_EYES_DIR+1) * 2;
+	if(target.size() < size)
+		target.resize(size);
 	
 	int i = 0;
 	for(int d = -NUM_EYES_DIR; d <= NUM_EYES_DIR; ++d)
 	{
 		float da = d * SENSOR_ANGLE_DIFF;
 		float l = hitTest(mPosX, mPosY, mAngle + da, mObjects, 0);
-		target[i] = l;
+		target[i++] = l;
 	}
 	
 	for(int d = -NUM_EYES_DIR; d <= NUM_EYES_DIR; ++d)
 	{
 		float da = d * SENSOR_ANGLE_DIFF;
 		float l = hitTest(mPosX, mPosY, mAngle + da, mObjects, 1);
-		target[i] = l;
+		target[i++] = l;
 	}
 }
 
