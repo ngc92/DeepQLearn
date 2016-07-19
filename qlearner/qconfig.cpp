@@ -1,4 +1,5 @@
 #include "qconfig.hpp"
+#include <algorithm>
 
 namespace qlearn 
 {
@@ -31,6 +32,18 @@ Config& Config::update_interval( std::size_t interval )
 	mNetUpdateFrq = interval;
 	return *this;
 }
+
+Config& Config::init_memory_size( std::size_t init_mem )
+{
+	mInitMemorySize = init_mem;
+	return *this;
+}
+
+Config& Config::init_epsilon_time( std::size_t initeps )
+{
+	mEpsilonStart = initeps;
+	return *this;
+}
  
 Config& Config::epsilon_steps( std::size_t steps )
 {
@@ -40,9 +53,13 @@ Config& Config::epsilon_steps( std::size_t steps )
 
 float Config::getStepEpsilon( std::size_t num_step ) const
 {
-	if(num_step > mEpsilonSteps)
+	if(num_step > mEpsilonSteps + mEpsilonStart)
 		return mFinalEpsilon;
+	if( num_step < mEpsilonStart )
+		return 1;
+
+	double f = (double)(num_step - mEpsilonStart) / mEpsilonSteps;
 	
-	return mFinalEpsilon + (1 - mFinalEpsilon) * (double)num_step / mEpsilonSteps;
+	return mFinalEpsilon * f + (1-f);
 }
 }

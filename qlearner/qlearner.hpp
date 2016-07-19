@@ -10,9 +10,10 @@
 namespace qlearn
 {
 	class QCore;
+	class Stats;
 	class QLearner;
 	
-	using qlearn_callback = std::function<void(const QLearner& learner)>;
+	using qlearn_callback = std::function<void(const QLearner& learner, const Stats& stats)>;
 	
 	class QLearner
 	{
@@ -29,9 +30,12 @@ namespace qlearn
 		const net::Network& network() const { return mNetwork; }
 		
 		void setCallback( qlearn_callback cb ) { mCallback = cb; };
+		
+		float getCurrentEpsilon() const;
 	private:
 		Config mConfig;
 		std::unique_ptr<QCore> mCore;
+		std::unique_ptr<Stats> mStats;
 		
 		// the network setup
 		net::Network mNetwork;

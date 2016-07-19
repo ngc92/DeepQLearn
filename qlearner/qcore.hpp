@@ -6,6 +6,7 @@
 #include <boost/circular_buffer.hpp>
 
 #include "qconfig.hpp"
+#include "action.h"
 
 namespace net
 {
@@ -16,14 +17,6 @@ namespace net
 namespace qlearn
 {
 	class MemoryCache;
-	
-	struct Action
-	{
-		std::size_t id;
-		float score;
-	};
-	
-	Action getAction(net::ComputationGraph& graph, const Vector& situation);
 	
 	class QCore
 	{
@@ -45,6 +38,7 @@ namespace qlearn
 		float learn(net::ComputationGraph& policy, net::ComputationGraph& target, net::Solver& solver);
 
 		std::size_t getSteps() const { return mStepCounter; }
+		float getEpsilon() const;
 		
 	private:
 		Config mConfig;
