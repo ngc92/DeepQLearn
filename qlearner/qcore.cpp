@@ -18,25 +18,21 @@ namespace qlearn
 	
 	QCore::~QCore() {}
 	
-	Action getAction(ComputationGraph& graph, const Vector& situation)
-	{
-		const auto& result = graph.forward( situation );
-		// greedy algorithm that generates the next action.
-		int row, col;
-		float quality = result.maxCoeff(&row,&col);
-		return {row, quality};
-	}
-	
 	std::size_t QCore::getRandomAction()
 	{
 		auto ind_dst = std::uniform_int_distribution<int>(0, mConfig.action_count()-1); // this is inclusive, so we need -1
 		return ind_dst(mRandom);
 	}
 	
+	float QCore::getEpsilon() const
+	{
+		return mConfig.getStepEpsilon( mLearningSteps );
+	}
+	
 	Action QCore::forward( net::ComputationGraph& policy, const Vector& input, bool learning )
 	{
 		++mStepCounter;
-		float eps = mConfig.getStepEpsilon( mLearningSteps );
+		float eps = getEpsilon();
 		
 		if(!learning) 		eps = 0.f;
 		
@@ -44,7 +40,7 @@ namespace qlearn
 		if(learning)	 mLastStates.push_front( input );
 		
 		// with certain probability choose a random action
-		auto random_action = std::discrete_distribution<int>({1 - eps, eps});
+		auto random_action = std::discrete_distribution<int>({eps, 1-eps});
 		if( random_action(mRandom))
 		{
 			Action action;

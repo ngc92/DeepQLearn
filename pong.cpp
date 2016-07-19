@@ -1,8 +1,11 @@
 #include "qlearner/qlearner.hpp"
+#include "qlearner/stats.h"
+#include "qlearner/action.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <chrono>
 #include <irrlicht/irrlicht.h>
 #include <boost/lexical_cast.hpp>
@@ -89,9 +92,9 @@ struct PongGame
 
 	const Vector& data() const
 	{
-		vec.resize(40);
-		auto d1 = dconv(bally, 0, 1, 20, std::move(dccache1));
-		auto d2 = dconv(posy, 0, 1, 20, std::move(dccache2));
+		vec.resize(30);
+		auto d1 = dconv(bally, 0, 1, 15, std::move(dccache1));
+		auto d2 = dconv(posy, 0, 1, 15, std::move(dccache2));
 		vec << d1, d2;
 		dccache1 = std::move(d1);
 		dccache2 = std::move(d2);
@@ -104,28 +107,30 @@ private:
 	mutable Vector dccache2;
 };
 
-void build_image(qlearn::QLearner& l);
+void build_image(const qlearn::QLearner& l);
 
 IrrlichtDevice* device;
 video::ITexture* texture = nullptr;
 std::mutex mTargetNet;
+std::atomic<bool> evaluate(false);
 
-void learn_thread( Network& target_net )
+void learn_thread( Network& target_net, ComputationGraph& graph )
 {
-	Config config(40, 3, 3000);
-	config.epsilon_steps(200000).update_interval(2000).batch_size(64);
+	Config config(20, 3, 2000000);
+	config.epsilon_steps(2000000).update_interval(10000).batch_size(32).init_memory_size(10000).init_epsilon_time(100000)
+		.discount_factor(0.98);
 	
 	Network network;
-	network << FcLayer((Matrix::Random(30, 40).array() - 0.5) / 5);
+	network << FcLayer(Matrix::Random(30, 30).array() / 5);
 	network << TanhLayer(Matrix::Zero(30, 1));
-	/*network << FcLayer((Matrix::Random(30, 30).array() - 0.5) / 5);
-	network << ReLULayer(Matrix::Zero(30, 1));
-	*/network << FcLayer((Matrix::Random(3, 30).array() - 0.5) / 5);
+	network << FcLayer(Matrix::Random(30, 30).array() / 5);
+	network << TanhLayer(Matrix::Zero(30, 1));
+	network << FcLayer(Matrix::Random(3, 30).array() / 5);
 	network << TanhLayer(Matrix::Zero(3, 1));
 	
 	qlearn::QLearner learner( config, std::move(network) );
 	
-	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.0001));
+	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.95, 0.0001, 0.000001));
 	RMSProp* rmsprop = prop.get();
 	Solver solver( std::move(prop) );
 	
@@ -138,14 +143,14 @@ void learn_thread( Network& target_net )
 	auto last_time = std::chrono::high_resolution_clock::now();
 	bool run = true;
 	
-	learner.setCallback( [&](const QLearner& learner ) 
+	learner.setCallback( [&](const QLearner& learner, const Stats& stats ) 
 	{
-//		std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
-//		std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
-//		rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
-//		rewf.flush();
+		std::cout << games << ": " << learner.getCurrentEpsilon() << "\n";
+		std::cout << stats.getSmoothReward() << " (" <<  stats.getSmoothQVal() << ", " << stats.getSmoothMSE() << ")\n";
+		rewf << stats.getSmoothReward() << "\t" <<  stats.getSmoothQVal() << "\t" << stats.getSmoothMSE() << " " << learner.getCurrentEpsilon()  << "\n";
+		rewf.flush();
 //		std::cout << learner.getNumberLearningSteps() << "\n";
-//		build_image(learner);
+		build_image(learner);
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
 		last_time = std::chrono::high_resolution_clock::now();
@@ -153,33 +158,26 @@ void learn_thread( Network& target_net )
 		std::cout << " - - - - - - - - - - \n";
 		std::lock_guard<std::mutex> lck(mTargetNet);
 		target_net = learner.network().clone();
+		graph = ComputationGraph(target_net);
+		evaluate = true;
 	} );
 
 	while(run)
 	{
-		if(games < 2000)
+		/*if(games < 1000)
 		{
 			rmsprop->setRate(0.001);
 		} else if ( games < 5000 )
 		{
-			rmsprop->setRate(0.0005);
+			rmsprop->setRate(0.005);
 		} else
 		{
 			rmsprop->setRate(0.0001);
-		}
+		}*/
 
 		float r = game.step(ac);
-		try
-		{
-			ac = learner.learn_step( game.data(), r, game.ballx > 1, solver );
-		} catch( std::exception& e)
-		{
-			std::cout << "EXCEPTION " << e.what() << "\n";
-		} catch( ... )
-		{
-			std::cout << "???";
-		}
-		if( game.ballx > 1.0 )
+		ac = learner.learn_step( game.data(), r, game.ballx >= 1, solver );
+		if( game.ballx >= 1.0 )
 		{
 			game.reset();
 			games++;
@@ -192,7 +190,7 @@ int main()
 {
 	Network network;
 	ComputationGraph graph(network);
-	std::thread learner( learn_thread, std::ref(network) );
+	std::thread learner( learn_thread, std::ref(network), std::ref(graph));
 	learner.detach();
 	
 	PongGame game;
@@ -201,23 +199,25 @@ int main()
 
 	device = createDevice(video::EDT_SOFTWARE, core::dimension2du(800, 600));
 
+	std::fstream evl("test.txt", std::fstream::out);
+	
 	int step = 0;
 	while(device->run())
 	{
 		step++;
-		/*float v;
+		float v;
 		{
 			std::lock_guard<std::mutex> lck(mTargetNet);
-			int ac = QLearner::getAction(graph, game.data(), v);
-			game.step(ac);
-		}*/
-		
+			auto ac = getAction(graph, game.data());
+			game.step(ac.id);
+			v = ac.score;
+		}
 		
 		device->getVideoDriver()->beginScene();
 		device->getVideoDriver()->draw2DPolygon( core::position2di(game.ballx * 400, game.bally * 400+100), 10);
 		device->getVideoDriver()->draw2DLine(core::position2di(400, (game.posy-BAT_SIZE)*400+100), core::position2di(400, (game.posy+BAT_SIZE)*400+100));
 
-		//device->getVideoDriver()->draw2DLine( core::position2di(500, 600), core::position2di(500, 200-200*q));
+		device->getVideoDriver()->draw2DLine( core::position2di(500, 600), core::position2di(500, 200-200*v));
 		device->getVideoDriver()->draw2DImage(texture, core::position2di(600, 0));
 		//device->getVideoDriver()->draw2DLine( core::position2di(520, 600), core::position2di(520, 200-200*r));
 		device->getVideoDriver()->endScene();
@@ -229,12 +229,35 @@ int main()
 			games++;
 			device->sleep(100);
 		}
+		
+		if(evaluate)
+		{
+			Network copy = network.clone();
+			ComputationGraph graph(copy);
+			float reward = 0;
+			for(int g = 0; g < 200; ++g)
+			{
+				PongGame game;
+				game.reset();
+				for(int s = 0; s < 100; ++s)
+				{
+					auto ac = getAction(graph, game.data());
+					reward += game.step(ac.id);
+					if( game.ballx > 1.0 ) break;
+				}
+			}
+			std::cout << reward << "\n";
+			evl << reward << "\n";
+			evl.flush();
+			evaluate = false;
+		}
 	}
 }
-/*
-void build_image(QLearner& l)
+
+void build_image(const QLearner& l)
 {
 	std::vector<unsigned char> grayscale(100*100*3);
+	ComputationGraph test(l.network());
 
 	PongGame game;
 	game.reset();
@@ -248,7 +271,7 @@ void build_image(QLearner& l)
 		{
 			game.posy = x / 100.0;
 			game.bally = y / 100.0;
-			Vector r = l.assess( game.data() );
+			const Vector& r = test.forward( game.data() );
 			grayscale[(100*y+x)*3] = (r[0] > r[1] && r[0] > r[2]) ? v(r[0]) : 0;
 			grayscale[(100*y+x)*3+1] = (r[1] > r[0] && r[1] > r[2]) ? v(r[1]) : 0;
 			grayscale[(100*y+x)*3+2] = (r[2] > r[0] && r[2] > r[1]) ? v(r[2]) : 0;
@@ -258,5 +281,5 @@ void build_image(QLearner& l)
 	auto img = device->getVideoDriver()->createImageFromData(irr::video::ECF_R8G8B8, irr::core::dimension2du(100, 100), &grayscale[0], false, false);
 	texture = device->getVideoDriver()->addTexture("image", img);
 }
-*/
+
 

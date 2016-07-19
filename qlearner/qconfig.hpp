@@ -15,6 +15,8 @@ namespace qlearn
 		Config& discount_factor( double factor );
 		Config& update_interval( std::size_t interval );
 		Config& epsilon_steps( std::size_t steps );
+		Config& init_memory_size( std::size_t init_mem );
+		Config& init_epsilon_time( std::size_t initeps );
 		
 		// get info
 		float getStepEpsilon( std::size_t num_step ) const;
@@ -37,12 +39,13 @@ namespace qlearn
 
 		// q algorithm params
 		std::size_t mMemoryLength;
-		double      mDiscountFactor = 0.99;
+		double      mDiscountFactor = 0.9;
 		std::size_t mNetUpdateFrq   = 10000;
 		std::size_t mInitMemorySize = 1000;
 		
 		// strategy annealing
 		float       mFinalEpsilon   = 0.1;
 		std::size_t mEpsilonSteps   = 1e6;
+		std::size_t mEpsilonStart   = 1000;
 	};
 }

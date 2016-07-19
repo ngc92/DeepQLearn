@@ -64,6 +64,8 @@
 		<Unit filename="pong.cpp">
 			<Option link="0" />
 		</Unit>
+		<Unit filename="qlearner/action.cpp" />
+		<Unit filename="qlearner/action.h" />
 		<Unit filename="qlearner/memory.cpp" />
 		<Unit filename="qlearner/memory.hpp" />
 		<Unit filename="qlearner/qconfig.cpp" />
@@ -72,6 +74,9 @@
 		<Unit filename="qlearner/qcore.hpp" />
 		<Unit filename="qlearner/qlearner.cpp" />
 		<Unit filename="qlearner/qlearner.hpp" />
+		<Unit filename="qlearner/stats.cpp" />
+		<Unit filename="qlearner/stats.h" />
+		<Unit filename="test/solver_test.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

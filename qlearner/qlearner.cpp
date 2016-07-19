@@ -1,5 +1,6 @@
 #include "qlearner.hpp"
 #include "qcore.hpp"
+#include "stats.h"
 
 // helpers
 /*Vector concat(const boost::circular_buffer<Vector>& b)
@@ -31,6 +32,7 @@ namespace qlearn
 	QLearner::QLearner( Config cfg, Network net ) : 
 		mConfig( cfg ), 
 		mCore( std::make_unique<QCore>( std::move(cfg)) ),
+		mStats( std::make_unique<Stats>( 10000 ) ),
 		mNetwork( net.clone() ),
 		mNetworkGraph( mNetwork ),
 		mTargetNet( std::move(net) ),
@@ -48,28 +50,26 @@ namespace qlearn
 		if(mCore->getSteps() % mConfig.update_interval() == 0)
 		{
 			if( mCallback )
-				mCallback(*this);
-
-		/*	// reset reward stats
-			mCurNetTotalReward = 0;
-			mCurNetTotalEpisodes = 0;
-
+				mCallback(*this, *mStats);
+			
 			// replace network
-			mQNetwork = std::make_shared<Network>(mLearningNetwork->clone());
-			mQGraph = ComputationGraph( *mQNetwork );
-		*/
+			mTargetNet = mNetwork.clone();
+			mTargetGraph = ComputationGraph( mTargetNet );
 		}
-/*
-		/// \attention This line allocates
-		mCurrentHistory.push_back( situation );
-		
-		/// \attention This line allocates
-		auto hist = concat(mCurrentHistory);*/
 		
 		mCore->backward( reward, terminal );
 		auto action = mCore->forward( mNetworkGraph, situation );
-
-		mCore->learn(mNetworkGraph, mTargetGraph, solver);
+		mStats->record(reward, action.score);
+		/// \todo technically, this is wrong! reward is shifted by one vs the score!
+		
+		float mse = mCore->learn(mNetworkGraph, mTargetGraph, solver);
+		mNetwork.update( solver );
+		mStats->record_error(mse);
 		return action.id;
+	}
+	
+	float QLearner::getCurrentEpsilon() const
+	{
+		return mCore->getEpsilon();
 	}
 }
