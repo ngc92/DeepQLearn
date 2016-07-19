@@ -7,7 +7,7 @@ void ComputationNode::backpropagate( const Vector& error, Solver& solver )
 {
 	if(mLayer)
 	{
-		mError = mLayer->backward(error, *this, solver);
+		mLayer->backward(error, mError, *this, solver);
 		if(mSource)
 		{
 			mSource->backpropagate( mError, solver );

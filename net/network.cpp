@@ -8,7 +8,7 @@ Network& Network::add_layer_imp( layer_t layer )
 	return *this;
 }
 
-ComputationNode Network::forward(Vector input) const
+/*ComputationNode Network::forward(Vector input) const
 {
 	ComputationNode node( std::move(input) );
 
@@ -19,11 +19,12 @@ ComputationNode Network::forward(Vector input) const
 	return node;
 }
 
+
 ComputationNode Network::operator()( Vector input ) const
 {
 	return forward( std::move(input) );
 }
-
+*/
 void Network::update(Solver& solver)
 {
     for(auto& l : mLayers)

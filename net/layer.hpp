@@ -8,17 +8,24 @@ namespace net
 class ILayer
 {
 public:
+	/// get the size of the layer output
+	virtual std::size_t getOutputSize() const = 0;
+	
 	/// call notation to pass a computation through this layer.
-	ComputationNode operator()(ComputationNode input ) const
+	/*ComputationNode operator()( ComputationNode input ) const
 	{
 		return forward( std::move(input) );
 	};
+	*/
 
 	/// propagate a computation node through this layer.
-	ComputationNode forward( ComputationNode input ) const;
+	//ComputationNode forward( ComputationNode input ) const;
+	
+	/// propagate a computation node through this layer.
+	void forward( const ComputationNode& input, ComputationNode& output ) const;
 
 	/// propagates error backward, and uses solver to track gradient
-	virtual Vector backward(const Vector& error, const ComputationNode& compute, Solver& solver) const = 0;
+	virtual void backward(const Vector& error, Vector& back, const ComputationNode& compute, Solver& solver) const = 0;
 
 	/// update the parameters according to the solver.
 	virtual void update(Solver& solver) = 0;

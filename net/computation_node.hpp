@@ -16,9 +16,9 @@ public:
 	{
 	}
 
-	ComputationNode( ComputationNode in, Vector out, const ILayer* l ) :
+	ComputationNode( std::shared_ptr<ComputationNode> in, Vector out, const ILayer* l ) :
 		/// \todo this is not nice, it requires us to do a dynamic memory allocation here.
-		mSource( std::unique_ptr<ComputationNode>( new ComputationNode(std::move(in)) ) ),
+		mSource( std::move(in) ),
 		mOutput( std::move(out) ), mLayer( l )
 	{
 	}
@@ -31,11 +31,13 @@ public:
 	const Vector& error() const { return mError; };
 	const ILayer* layer() const { return mLayer; };
 
+	Vector& out_cache() { return mOutput; }
+	
 	// the interesting thing: backpropagate
 	void backpropagate( const Vector& error, Solver& solver );
 
 private:
-	std::unique_ptr<ComputationNode> mSource;
+	std::shared_ptr<ComputationNode> mSource;
 	Vector mOutput;
 	Vector mError;
 

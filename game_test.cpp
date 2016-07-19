@@ -1,4 +1,5 @@
-#include "q_learner.hpp"
+#include "qlearner/qlearner.hpp"
+#include "qlearner/qcore.hpp"
 #include <iostream>
 #include <fstream>
 #include <thread>
@@ -20,34 +21,34 @@
 
 using namespace net;
 using namespace irr;
+using namespace qlearn;
 
 void build_image(const QLearner& l);
 
 IrrlichtDevice* device;
 std::mutex mTargetNet;
 
-void learn_thread( Network& target_net, Game& game )
+void learn_thread( Network& target_net, ComputationGraph& target_graph, Game& game )
 {
 	game.restart();
 	Vector state;
 	game.getCurrentState( state );
 	
-	QLearner learner( QLearnerConfig( state.size(), game.getNumInputs(), 30000).epsilon_steps(200000).update_interval(2000).batch_size(64) );
-	
 	Network network;
-	network << FcLayer((Matrix::Random(50, learner.getInputSize()).array() - 0.5) / 5);
+	network << FcLayer((Matrix::Random(50, game.getNumInputs()).array()) / 5);
 	network << TanhLayer(Matrix::Zero(50, 1));
-	network << FcLayer((Matrix::Random(50, 50).array() - 0.5) / 7);
+	network << FcLayer((Matrix::Random(50, 50).array()) / 7);
 	network << TanhLayer(Matrix::Zero(50, 1));
-	network << FcLayer((Matrix::Random(game.getNumInputs(), 50).array() - 0.5) / 7);
+	network << FcLayer((Matrix::Random(game.getNumInputs(), 50).array()) / 7);
 	network << TanhLayer(Matrix::Zero(game.getNumInputs(), 1));
+	
+	QLearner learner( Config( state.size(), game.getNumInputs(), 30000).epsilon_steps(200000).update_interval(2000).batch_size(64), std::move(network) );
 	
 	auto prop = std::unique_ptr<RMSProp>(new RMSProp(0.9, 0.0005, 0.001));
 	RMSProp* rmsprop = prop.get();
 	Solver solver( std::move(prop) );
 	
 	std::fstream rewf("reward.txt", std::fstream::out);
-	learner.setQNetwork( std::move(network) );
 
 	int ac = 2;
 	auto last_time = std::chrono::high_resolution_clock::now();
@@ -56,17 +57,18 @@ void learn_thread( Network& target_net, Game& game )
 	
 	learner.setCallback( [&](const QLearner& l ) 
 	{
-		std::cout << learner.getCurrentEpsilon() << "\n";
-		std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
-		rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
-		rewf.flush();
-		std::cout << learner.getNumberLearningSteps() << "\n";
+		//std::cout << learner.getCurrentEpsilon() << "\n";
+		//std::cout << learner.getAverageEpisodeReward() << " (" << learner.getAverageQuality() << ", " << learner.getAverageError() << ")\n";
+		//rewf << learner.getAverageEpisodeReward() << " " << learner.getAverageQuality() << " " << learner.getAverageError() << "\n";
+		//rewf.flush();
+//		std::cout << learner.getNumberLearningSteps() << "\n";
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
 					std::chrono::high_resolution_clock::now() - last_time).count() << " ms\n";
 		last_time = std::chrono::high_resolution_clock::now();
 		std::cout << " - - - - - - - - - - \n";
 		std::lock_guard<std::mutex> lck(mTargetNet);
-		target_net = learner.getQNetwork().clone();
+		target_net = learner.network().clone();
+		target_graph = ComputationGraph(target_net);
 		
 		if(episodes > 160)
 		{
@@ -108,7 +110,8 @@ int main()
 	Collect learn_game;
 	
 	Network network;
-	std::thread learner( learn_thread, std::ref(network), std::ref(learn_game) );
+	ComputationGraph graph(network);
+	std::thread learner( learn_thread, std::ref(network), std::ref(graph), std::ref(learn_game) );
 	learner.detach();
 	
 	std::fstream rewf("reward.txt", std::fstream::out);
@@ -122,10 +125,10 @@ int main()
 		{
 			std::lock_guard<std::mutex> lck(mTargetNet);
 			game.getCurrentState(state);
-			int ac = QLearner::getAction(network, state, v);
+			Action ac = qlearn::getAction(graph, state);
 			if(rand() % 100 < 5)
-				ac = rand() % game.getNumInputs();
-			game.step(ac);
+				ac.id = rand() % game.getNumInputs();
+			game.step(ac.id);
 		}
 		device->getVideoDriver()->beginScene();
 		game.visualize(*device->getVideoDriver(), core::recti(10, 10, 300, 300));

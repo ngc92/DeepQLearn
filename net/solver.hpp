@@ -20,7 +20,7 @@ public:
 	template<class Value, class Expr>
 	void operator()(const Value& val, Expr&& expr)
 	{
-		getGradient(val) += expr;
+		getGradient(val).noalias() += expr;
 	}
 
 	void update(Matrix& param);
@@ -37,6 +37,7 @@ private:
 	Matrix& getGradientBuffer(const number_t* param, std::size_t rows, std::size_t cols);
 
 	// remember all parameter gradients
+	/// \todo improve tracking of target parameter!
 	std::unordered_map<const number_t*, Matrix> mGradientMap;
 	std::unique_ptr<IUpdateRule> mUpdateRule;
 };

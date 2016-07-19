@@ -2,10 +2,8 @@
 
 namespace net
 {
-ComputationNode ILayer::forward( ComputationNode input ) const
+void ILayer::forward( const ComputationNode& input, ComputationNode& output ) const
 {
-	Vector output;
-	process( input.output(), output );
-	return ComputationNode( std::move(input), output, this );
+	process( input.output(), output.out_cache() );
 }
 }
